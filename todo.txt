@@ -1,0 +1,2 @@
+show real-time position of driver 
+select 'inter state' or 'intra-state' journey.
