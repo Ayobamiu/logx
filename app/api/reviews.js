@@ -27,6 +27,19 @@ const addReview = async (formData) => {
   return { error: err, data, errMessage };
 };
 
+const getUserReviews = async (userId) => {
+  let data = {};
+  let err = false;
+  try {
+    const result = await apiClientNoCache.get(`/review/${userId}`);
+    data = result?.data?.error ? [] : result.data;
+  } catch (error) {
+    if (error !== "") {
+      err = true;
+    }
+  }
+  return { error: err, data };
+};
 const getMyReviews = async () => {
   const token = await storage.getToken();
   let data = {};
@@ -49,4 +62,5 @@ const getMyReviews = async () => {
 export default {
   addReview,
   getMyReviews,
+  getUserReviews,
 };

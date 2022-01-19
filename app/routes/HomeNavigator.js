@@ -34,6 +34,10 @@ import WithdrawalScreen from "../screens/WithdrawalScreen";
 import AddBankRecordScreen from "../screens/AddBankRecordScreen";
 import AuthContext from "../contexts/auth";
 import SelectJourneyType from "../screens/SelectJourneyType";
+import UploadNINScreen from "../screens/UploadNINScreen";
+import VerifyLicencse from "../screens/VerifyLicencse";
+import VerifyNID from "../screens/VerifyNID";
+import VerifyVID from "../screens/VerifyVID";
 
 const Stack = createStackNavigator();
 
@@ -196,6 +200,50 @@ function HomeNavigator() {
         component={UploadDocumentsScreen}
         options={{
           title: "Choose  available  document",
+          headerStyle: {
+            backgroundColor: colors.white,
+            elevation: 0,
+          },
+        }}
+      />
+      <Stack.Screen
+        name='UploadNINScreen'
+        component={UploadNINScreen}
+        options={{
+          title: "",
+          headerStyle: {
+            backgroundColor: colors.white,
+            elevation: 0,
+          },
+        }}
+      />
+      <Stack.Screen
+        name='VerifyVID'
+        component={VerifyVID}
+        options={{
+          title: "",
+          headerStyle: {
+            backgroundColor: colors.white,
+            elevation: 0,
+          },
+        }}
+      />
+      <Stack.Screen
+        name='VerifyNID'
+        component={VerifyNID}
+        options={{
+          title: "",
+          headerStyle: {
+            backgroundColor: colors.white,
+            elevation: 0,
+          },
+        }}
+      />
+      <Stack.Screen
+        name='VerifyLicencse'
+        component={VerifyLicencse}
+        options={{
+          title: "",
           headerStyle: {
             backgroundColor: colors.white,
             elevation: 0,

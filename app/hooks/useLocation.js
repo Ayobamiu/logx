@@ -2,57 +2,50 @@
 
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 // import { getCountries } from "../api/getAddress";
 import placeApi from "../api/places";
 import authApi from "../api/auth";
 import socket from "../api/socket";
-import Geolocation from "react-native-geolocation-service";
+import AuthContext from "../contexts/auth";
+import useAuth from "../auth/useAuth";
+import { get } from "../utility/cache";
+import storage from "../auth/storage";
 
 const useLocation = () => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [countries, setCountries] = useState([]);
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     (async () => {
       try {
         let { status } = await Location.requestForegroundPermissionsAsync();
-        // await Location.requestBackgroundPermissionsAsync();
         if (status !== "granted") {
           setErrorMsg("Permission to access location was denied");
           return;
         }
-
-        if (status !== "granted") {
-          Geolocation.getCurrentPosition(
-            (position) => {
-              console.log("position", position);
-            },
-            (error) => {
-              // See error code charts below.
-              console.log(error.code, error.message);
-            },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-          );
-        }
       } catch (error) {}
     })();
   }, []);
+
   useEffect(() => {
     (async () => {
+      const userData = await storage.getUser();
+      setUser(userData);
       const data = await getLocation();
       setLocation(data);
-      await Location.setGoogleApiKey("AIzaSyD7EBl1UGH5xBqR7ChqQkpw3_DXKKFjOV4");
+      await Location.setGoogleApiKey("AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y");
 
       const addressData = await Location.reverseGeocodeAsync({
         latitude: data.coords.latitude,
         longitude: data.coords.longitude,
       }).catch((error) => {
-        console.log("error", error);
+        // console.log("error", error);
       });
-      setAddress(addressData[0]);
+      setAddress(addressData && addressData[0]);
       await updateLastKnownLocation({
         location: {
           latitude: data.coords.latitude,
@@ -77,8 +70,26 @@ const useLocation = () => {
 
   Location.watchPositionAsync(
     { accuracy: Location.Accuracy.High },
-    (location) => {
-      socket.emit("driver:location", { ...location });
+    async (location) => {
+      // console.log("Location has changed", {
+      //   latitude: location?.coords?.latitude,
+      //   longitude: location?.coords?.longitude,
+      // });
+      if (location && user) {
+        socket.emit("driver:location:update", {
+          location: {
+            latitude: location?.coords?.latitude,
+            longitude: location?.coords?.longitude,
+          },
+          userId: user?._id,
+        });
+        await updateLastKnownLocation({
+          location: {
+            latitude: location?.coords?.latitude,
+            longitude: location?.coords?.longitude,
+          },
+        });
+      }
     }
   );
 

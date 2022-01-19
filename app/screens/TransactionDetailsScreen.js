@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
   Alert,
   ImageBackground,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
 import AppText from "../components/AppText";
 import {
@@ -41,6 +43,8 @@ import socket from "../api/socket";
 import TripItem from "../components/TripItem";
 import AddReview from "../components/AddReview";
 import timeSince from "../utility/timeSince";
+import MapViewDirections from "react-native-maps-directions";
+import MapComponent from "../components/MapComponent";
 
 function TransactionDetailsScreen(props) {
   const { user } = useContext(AuthContext);
@@ -145,12 +149,6 @@ function TransactionDetailsScreen(props) {
   socket.on("trip:bid:created", () => {
     loadTriBids();
   });
-  socket.on("location:driver", (data) => {
-    console.log("Driver's location changed.", {
-      latitude: data.latitude,
-      longitude: data.longitude,
-    });
-  });
 
   const { getLocation, location } = useLocation();
   const [region, setRegion] = useState({
@@ -160,23 +158,12 @@ function TransactionDetailsScreen(props) {
     longitudeDelta: 0.0421,
   });
 
-  console.log("location", location);
   const [driverLocation, setDriverLocation] = useState({
     latitude: location?.coords?.latitude || 8.9233587,
     longitude: location?.coords?.latitude || -0.3674603,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
-  // let count = 0;
-  const [count, setCount] = useState(false);
-  //Update location every 20 seconds
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setCount(!count);
-      socket.emit("driver:location:request", { id: trip._id });
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [count]);
 
   useEffect(() => {
     (async () => {
@@ -252,6 +239,7 @@ function TransactionDetailsScreen(props) {
   }, [trip.status]);
 
   const [refreshing, setRefreshing] = React.useState(false);
+  const [showFullScreenMap, setShowFullScreenMap] = useState(false);
 
   const cancelTrip = () => {
     Alert.alert("Cancel Trip?", "Do you want to cancel this trip?", [
@@ -400,7 +388,7 @@ function TransactionDetailsScreen(props) {
                   transform: [{ translateY: -10 }, { translateX: 5 }],
                 }}
                 showSeparator
-                running
+                running={true}
               />
               <Pressable
                 style={styles.addTimeButton}
@@ -459,64 +447,28 @@ function TransactionDetailsScreen(props) {
             />
           ))}
           <View style={styles.mapView}>
-            <MapView
-              // region={{
-              //   ...region,
-              //   latitude: Number(driverLocation.latitude),
-              //   longitude: Number(driverLocation.longitude),
-              // }}
-
-              style={styles.map}
-              onRegionChange={() => setRegion(region)}
-              loadingEnabled={true}
-              showsUserLocation={true}>
-              <Marker
-                coordinate={{
-                  latitude: Number(driverLocation.latitude),
-                  longitude: Number(driverLocation.longitude),
-                }}
-                title="Driver's Location"
-                description="Driver's Location"
-                pinColor={colors.primary}>
-                <MaterialCommunityIcons name='taxi' size={24} color='black' />
-              </Marker>
-              {packageOne && (
-                <Polyline
-                  lineDashPattern={[0]}
-                  coordinates={polylineCoordinates}
-                  strokeColor='#000' // fallback for when `strokeColors` is not supported by the map-provider
-                  strokeColors={[colors.primary]}
-                  strokeWidth={6}
-                />
-              )}
-
-              {trip.packages.map((item, index) => (
-                <Marker
-                  key={index}
-                  coordinate={{
-                    latitude: Number(item.deliveryAddressLat),
-                    longitude: Number(item.deliveryAddressLong),
-                  }}
-                  title={`Delivery Location ${index + 1}`}
-                  description={`Delivery Location ${index + 1}`}
-                  pinColor={colors.primary}>
-                  <MapLabel text={item.deliveryAddress} />
-                </Marker>
-              ))}
-              {trip.packages.map((item, index) => (
-                <Marker
-                  key={index}
-                  coordinate={{
-                    latitude: Number(item.pickUpAddressLat),
-                    longitude: Number(item.pickUpAddressLong),
-                  }}
-                  title={`Pick Up Point ${index + 1}`}
-                  description={`Pick Up Point ${index + 1}`}
-                  pinColor={colors.primary}>
-                  <MapLabel text={item.pickUpAddress} />
-                </Marker>
-              ))}
-            </MapView>
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                zIndex: 3,
+                backgroundColor: colors.primary,
+                paddingVertical: 4,
+                paddingHorizontal: 8,
+                borderRadius: 16,
+              }}
+              onPress={() => setShowFullScreenMap(true)}>
+              <AppText
+                size='x-small'
+                style={{ color: colors.white, fontWeight: "bold" }}>
+                Full Screen
+              </AppText>
+            </TouchableOpacity>
+            <MapComponent
+              driverLocation={driverLocation}
+              packages={trip.packages}
+            />
 
             <View style={styles.mapStatus}>
               <AppText style={{ color: status.color }}>{status.text}</AppText>
@@ -864,6 +816,21 @@ function TransactionDetailsScreen(props) {
           // plus seconds
         }}
       />
+      <Modal visible={showFullScreenMap}>
+        <View style={{ width: "100%", height: "100%" }}>
+          <Ionicons
+            name='close-circle'
+            color={colors.light}
+            size={30}
+            style={{ position: "absolute", top: 30, right: 20, zIndex: 3 }}
+            onPress={() => setShowFullScreenMap(false)}
+          />
+          <MapComponent
+            driverLocation={driverLocation}
+            packages={trip.packages}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }

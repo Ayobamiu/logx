@@ -23,10 +23,12 @@ import placesApi from "../api/places";
 import BidResponseItem from "../components/BidResponseItem";
 import { usersList } from "../api/socket";
 import { getDistanceFromLatLonInKm } from "../utility/latLong";
+import MapComponent from "../components/MapComponent";
+import showToast from "../config/showToast";
 
 function AvailableDrivers(props) {
   const { getLocation, location } = useLocation();
-  const usersWithDistance = usersList.map((i) => {
+  const usersWithinDistance = usersList.map((i) => {
     return {
       ...i,
       distance: getDistanceFromLatLonInKm(
@@ -45,7 +47,7 @@ function AvailableDrivers(props) {
     loading: false,
     action: "",
   });
-
+  const [sendingInvite, setSendingInvite] = useState(false);
   const { trip, setTrip } = useContext(TripContext);
   const loadTriBids = async () => {
     setLoadingTripBids(true);
@@ -55,6 +57,18 @@ function AvailableDrivers(props) {
       setBids(data);
     }
     setLoadingTripBids(false);
+  };
+  const inviteDriver = async (userId) => {
+    setSendingInvite(true);
+
+    const { data, error } = await placesApi.inviteDriverToTrip(
+      trip._id,
+      userId
+    );
+    if (!error && data) {
+      showToast("Invite Sent");
+    }
+    setSendingInvite(false);
   };
 
   const acceptRejectBid = async (id, status) => {
@@ -140,7 +154,9 @@ function AvailableDrivers(props) {
         <Pressable
           onPress={() => setShowBids(!showBids)}
           style={styles.bidButton}>
-          <AppText>{showBids ? "Hide" : "Show"} bids</AppText>
+          <AppText style={{ color: colors.white }}>
+            {showBids ? "Hide" : "Show"} bids
+          </AppText>
         </Pressable>
 
         {showBids && (
@@ -180,62 +196,18 @@ function AvailableDrivers(props) {
                     processingBid.loading
                   }
                   disableButtons={processingBid.loading}
+                  onPressProfile={() => {
+                    props.navigation.navigate("DriverProfileScreen", {
+                      userId: item?.driver._id,
+                    });
+                  }}
                 />
               )}
               keyExtractor={(item) => item.id}
             />
           </View>
         )}
-
-        <MapView
-          region={{
-            ...region,
-            latitude: Number(packageOne.deliveryAddressLat),
-            longitude: Number(packageOne.deliveryAddressLong),
-          }}
-          style={styles.map}
-          // showsTraffic={true}
-          // showsCompass={true}
-          onRegionChange={() => setRegion(region)}
-          loadingEnabled={true}
-          showsUserLocation={true}>
-          {packageOne && (
-            <Polyline
-              lineDashPattern={[0]}
-              coordinates={polylineCoordinates}
-              strokeColor='#000' // fallback for when `strokeColors` is not supported by the map-provider
-              strokeColors={[colors.primary]}
-              strokeWidth={6}
-            />
-          )}
-
-          {trip.packages.map((item, index) => (
-            <Marker
-              key={index}
-              coordinate={{
-                latitude: Number(item.deliveryAddressLat),
-                longitude: Number(item.deliveryAddressLong),
-              }}
-              title={`Delivery Location ${index + 1}`}
-              description={`Delivery Location ${index + 1}`}
-              pinColor={colors.primary}>
-              <MapLabel text={item.deliveryAddress} />
-            </Marker>
-          ))}
-          {trip.packages.map((item, index) => (
-            <Marker
-              key={index}
-              coordinate={{
-                latitude: Number(item.pickUpAddressLat),
-                longitude: Number(item.pickUpAddressLong),
-              }}
-              title={`Pick Up Point ${index + 1}`}
-              description={`Pick Up Point ${index + 1}`}
-              pinColor={colors.primary}>
-              <MapLabel text={item.pickUpAddress} />
-            </Marker>
-          ))}
-        </MapView>
+        <MapComponent packages={trip.packages} />
       </View>
       <ScrollView
         style={[styles.usersBox, { height: height * 0.4 }]}
@@ -251,19 +223,24 @@ function AvailableDrivers(props) {
           </Pressable>
           <View style={styles.usersList}>
             <AppText size='medium'>Available for Delivery</AppText>
-            {usersWithDistance.length === 0 && (
+            {usersWithinDistance.length === 0 && (
               <View style={{ marginVertical: 16 }}>
                 <AppText>
                   Loading drivers <ActivityIndicator />
                 </AppText>
               </View>
             )}
-            {usersWithDistance.map((i, index) => (
+            {usersWithinDistance.map((i, index) => (
               <AvailableUserItem
                 name={i.name}
                 distance={i.distance}
                 key={index}
-                onPress={() => props.navigation.navigate("DriverProfileScreen")}
+                onPress={() =>
+                  // props.navigation.navigate("DriverProfileScreen", {
+                  //   userId: i.userId,
+                  // })
+                  inviteDriver(i.userId)
+                }
               />
             ))}
           </View>
@@ -289,7 +266,7 @@ const styles = StyleSheet.create({
   bidButton: {
     position: "absolute",
     borderRadius: 20,
-    backgroundColor: colors.white,
+    backgroundColor: colors.primary,
     top: 32,
     right: 32,
     elevation: 2,

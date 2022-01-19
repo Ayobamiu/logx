@@ -1,3 +1,5 @@
+/** @format */
+
 export default {
   black: "#000000",
   danger: "#ff5252",
@@ -9,6 +11,7 @@ export default {
   secondary: "#2B2D42",
   secondaryLight: "#343750",
   success: "#5cb85c",
+  opaque: "rgba(0, 0, 0, 0.5)",
   successLight: "rgba(76, 217, 100, 0.1)",
   transparent: "transparent",
   title: "#616161",

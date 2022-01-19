@@ -37,9 +37,11 @@ function DeliveryMerchantHomepage(props) {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  // useEffect(() => {
-  //   loadTrips();
-  // }, []);
+  useEffect(() => {
+    const invitation = props.route?.params?.trip;
+    if (invitation) {
+    }
+  }, []);
   // useEffect(() => {
   //   socket.on("trip:created", () => {
   //     // loadTrips();

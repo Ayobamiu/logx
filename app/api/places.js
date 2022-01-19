@@ -179,6 +179,28 @@ const driverAcceptTrip = async (tripId, formData) => {
   }
   return { error: err, data, errMessage };
 };
+const inviteDriverToTrip = async (tripId, userId) => {
+  let data = {};
+  let err = false;
+  let errMessage = "";
+
+  try {
+    const result = await apiClientNoCache.post(`/trip/invite-driver`, {
+      userId,
+      tripId,
+    });
+    data = result?.data?.error ? [] : result.data;
+    if (result.error) {
+      err = true;
+      errMessage = result.message;
+    }
+  } catch (error) {
+    if (error !== "") {
+      err = true;
+    }
+  }
+  return { error: err, data, errMessage };
+};
 const getMyTrip = async () => {
   const token = await storage.getToken();
   let data = {};
@@ -235,4 +257,5 @@ export default {
   addTripBid,
   driverAcceptTrip,
   changeTripPackageStatus,
+  inviteDriverToTrip,
 };

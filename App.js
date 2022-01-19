@@ -26,7 +26,6 @@ import { Platform, Text } from "react-native";
 
 export default function App() {
   const { location } = useLocation();
-  console.log("location", Platform.OS, location);
 
   const [user, setUser] = React.useState(null);
   const [mode, setMode] = React.useState("sender");
@@ -92,10 +91,10 @@ export default function App() {
                     <ModeContext.Provider value={{ mode, setMode }}>
                       <AuthContext.Provider value={{ user, setUser }}>
                         <NavigationContainer ref={navigationRef}>
-                          {/* {user ? <DrawerNavigator /> : <AuthNavigator />} */}
+                          {user ? <DrawerNavigator /> : <AuthNavigator />}
                           {/* <Text>Time</Text> */}
                           {/* <Text>{time.toLocaleTimeString()}</Text> */}
-                          <TestLocation />
+                          {/* <TestLocation /> */}
                         </NavigationContainer>
                       </AuthContext.Provider>
                     </ModeContext.Provider>

@@ -7,6 +7,7 @@ import {
   Dimensions,
   ImageBackground,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
 import colors from "../config/colors";
 import AppText from "./AppText";
@@ -15,6 +16,7 @@ import AppButton from "./AppButton";
 
 function BidResponseItem({
   onReject = () => {},
+  onPressProfile = () => {},
   onAccept = () => {},
   bidItem,
   loadingAccept = false,
@@ -26,16 +28,18 @@ function BidResponseItem({
   return (
     <View style={[styles.container, { width: width - 48 }]}>
       <View style={styles.textSection}>
-        <ImageBackground
-          source={{ uri: bidItem?.driver?.profilePhoto }}
-          style={styles.avatar}
-          resizeMode='cover'
-          style={styles.avatar}
-          borderRadius={32 / 2}>
-          {!bidItem?.driver?.profilePhoto && (
-            <AntDesign name='user' size={24} color={colors.black} />
-          )}
-        </ImageBackground>
+        <Pressable onPress={onPressProfile}>
+          <ImageBackground
+            source={{ uri: bidItem?.driver?.profilePhoto }}
+            style={styles.avatar}
+            resizeMode='cover'
+            style={styles.avatar}
+            borderRadius={32 / 2}>
+            {!bidItem?.driver?.profilePhoto && (
+              <AntDesign name='user' size={24} color={colors.black} />
+            )}
+          </ImageBackground>
+        </Pressable>
         <View style={styles.mr10}>
           <AppText style={[styles.unselectedText]}>Ratings</AppText>
           <View style={[styles.row]}>

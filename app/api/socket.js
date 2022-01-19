@@ -20,7 +20,7 @@ socket.on("request:latlong", async (data) => {
 });
 
 socket.on("driver:location", (data) => {
-  console.log("data", data);
+  // console.log("data", data);
 });
 socket.on("get_users_online", (users) => {
   // console.log("now");

@@ -20,9 +20,9 @@ import authApi from "../api/auth";
 import showToast from "../config/showToast";
 import AuthContext from "../contexts/auth";
 import useAuth from "../auth/useAuth";
-import apiClientNotCached from "../api/clientNotCached";
+import NINSample from "../assets/NINSample.svg";
 
-function UploadLicenseScreen(props) {
+function UploadNINScreen(props) {
   const [image, setImage] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
@@ -82,29 +82,15 @@ function UploadLicenseScreen(props) {
           <AppText
             size='16'
             style={[{ color: colors.black, fontWeight: "bold" }, styles.mv10]}>
-            Take a Photo of your Driver’s License
+            Submit your NIN Slip
           </AppText>
           <AppText size='input' style={[{ color: colors.black }, styles.mv10]}>
-            1. If the name of the vehicle document and the name on DL/Pan Card
-            are not matching then make sure you upload N.O.C(Notary lease
-            agreement or sales agreement) first and then upload the RC,
-            Insurance and Permit documents later
-          </AppText>
-          <AppText size='input' style={[{ color: colors.black }, styles.mv10]}>
-            2. Make sure Model, Vehicle numbers, Chassis numbers, Registration
-            name, Start date, Expiry date, financier name or company name on the
-            commercial Insurance are clearly visible and the photo should not be
-            blurred
-          </AppText>
-          <AppText size='input' style={[{ color: colors.black }, styles.mv10]}>
-            3. Fuel type, Model, Year, Vehicle numbers, Chassis numbers,
-            Registration name, Expiry date and Govt logo on the Registration
-            Certificate should be clearly visible and the photo should not be
-            blurred
+            Please make sure we can easily read all the details. Check the
+            sample below
           </AppText>
         </View>
 
-        <ImageBackground
+        {/* <ImageBackground
           style={[styles.avatar, { marginTop: 50 }]}
           source={image}>
           {!image && (
@@ -114,7 +100,8 @@ function UploadLicenseScreen(props) {
               color={colors.white}
             />
           )}
-        </ImageBackground>
+        </ImageBackground> */}
+        <NINSample />
       </ScrollView>
       <View style={[{ width: "100%" }, styles.floatActionButton]}>
         {!image ? (
@@ -221,7 +208,7 @@ function UploadLicenseScreen(props) {
                 // }}
                 onPress={() => {
                   const formData = new FormData();
-                  formData.append("driversLicense", {
+                  formData.append("ninSlip", {
                     ...image,
                     name: `image${Math.random() * 10000}.jpg`,
                   });
@@ -384,4 +371,4 @@ const styles = StyleSheet.create({
   },
   mv10: { marginVertical: 10 },
 });
-export default UploadLicenseScreen;
+export default UploadNINScreen;
