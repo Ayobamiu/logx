@@ -1,5 +1,6 @@
 /** @format */
 
+import apiClientNotCached from "./clientNotCached";
 import apiClient from "./client";
 import storage from "../auth/storage";
 const { default: axios } = require("axios");
@@ -15,6 +16,19 @@ const sendEndTripOTP = (data) =>
   apiClient.post("/trip/end-trip-otp", { ...data });
 // const updateProfile = (data) => apiClient.patch("/auth", { ...data });
 
+const getUserProfile = async (userId) => {
+  let data = {};
+  let err = false;
+  try {
+    const result = await apiClientNotCached.get(`/auth/${userId}`);
+    data = result?.data?.error ? [] : result.data;
+  } catch (error) {
+    if (error !== "") {
+      err = true;
+    }
+  }
+  return { error: err, data };
+};
 const changePassword = async (formData) => {
   const token = await storage.getToken();
   let data = {};
@@ -81,4 +95,5 @@ export default {
   sendEndTripOTP,
   passordResetCode,
   changePassword,
+  getUserProfile,
 };

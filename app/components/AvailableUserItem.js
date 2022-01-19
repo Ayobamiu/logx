@@ -20,7 +20,9 @@ function AvailableUserItem({ onPress = () => {}, name, distance }) {
             {name}
             <AppText size='x-small' style={styles.italic}>
               {" "}
-              {km > 0 ? `${km}km Away` : `${distance}m Away`}
+              {km > 0
+                ? `${Math.round(km)}km Away`
+                : `${Math.round(distance)}m Away`}
             </AppText>
           </AppText>
           <View style={[styles.row]}>

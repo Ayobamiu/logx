@@ -62,7 +62,7 @@ function DriverRequestPreview({ requestItem }) {
 
     const { data, error, errMessage } = await placesApi.addTripBid(
       { price },
-      requestItem._id
+      requestItem?._id
     );
 
     if (error) {
@@ -73,7 +73,7 @@ function DriverRequestPreview({ requestItem }) {
       }
     }
     if (!error && data) {
-      socket.emit("trip:bid:create", { tripId: requestItem._id });
+      socket.emit("trip:bid:create", { tripId: requestItem?._id });
       showToast("Your bid has been submitted successfully!");
       setShowBidModal(false);
     }
@@ -82,7 +82,7 @@ function DriverRequestPreview({ requestItem }) {
     }, 2000);
   };
 
-  // if (requestItem.status !== "pending") return null;
+  // if (requestItem?.status !== "pending") return null;
   return (
     <Pressable
       style={[styles.driverItem, styles.mv8]}
@@ -102,11 +102,11 @@ function DriverRequestPreview({ requestItem }) {
               {requestItem?.sender?.firstName} {requestItem?.sender?.lastName}
             </AppText>
             <AppText size='16' style={styles.light}>
-              {Math.round(requestItem.distance / 1000)} km Away
+              {Math.round(requestItem?.distance / 1000)} km Away
             </AppText>
           </View>
           <AppText size='16' style={[styles.black, styles.bold, styles.mlAuto]}>
-            &#8358; {requestItem.price}
+            &#8358; {requestItem?.price}
           </AppText>
         </View>
       </View>
@@ -328,7 +328,7 @@ function DriverRequestPreview({ requestItem }) {
                   )
                 }
                 onPress={async () => {
-                  await driverAcceptTrip(requestItem._id, user._id);
+                  await driverAcceptTrip(requestItem?._id, user._id);
                 }}
               />
             </View>

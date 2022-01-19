@@ -59,6 +59,50 @@ function UploadDocumentsScreen(props) {
     props.navigation.goBack();
   };
 
+  const uploadNIN = async () => {
+    if (user.ninSlip) {
+      Alert.alert(
+        "You have uploaded your NIN Slip",
+        "Do you want to change your NIN Slip?",
+        [
+          {
+            text: "No",
+            style: "cancel",
+          },
+          {
+            text: "Yes",
+            onPress: async () => {
+              props.navigation.navigate("UploadNINScreen");
+            },
+          },
+        ]
+      );
+    } else {
+      props.navigation.navigate("UploadNINScreen");
+    }
+  };
+  const uploadLicense = async () => {
+    if (user.driversLicense) {
+      Alert.alert(
+        "You have uploaded your drivers License",
+        "Do you want to change your drivers License?",
+        [
+          {
+            text: "No",
+            style: "cancel",
+          },
+          {
+            text: "Yes",
+            onPress: async () => {
+              props.navigation.navigate("UploadLicenseScreen");
+            },
+          },
+        ]
+      );
+    } else {
+      props.navigation.navigate("UploadLicenseScreen");
+    }
+  };
   const uploadNationalId = async () => {
     if (user.nationalId) {
       Alert.alert(
@@ -239,6 +283,18 @@ function UploadDocumentsScreen(props) {
       ]
     );
   };
+  const removeNIN = () => {
+    Alert.alert("Delete File", "Do you want to delete your NIN Slip file?", [
+      {
+        text: "No",
+        style: "cancel",
+      },
+      {
+        text: "Yes",
+        onPress: () => handleUpdateProfile({ ninSlip: "" }),
+      },
+    ]);
+  };
   const removeNID = () => {
     Alert.alert("Delete File", "Do you want to delete your National ID file?", [
       {
@@ -250,6 +306,22 @@ function UploadDocumentsScreen(props) {
         onPress: () => handleUpdateProfile({ nationalId: "" }),
       },
     ]);
+  };
+  const removeLicense = () => {
+    Alert.alert(
+      "Delete File",
+      "Do you want to delete your driver's License file?",
+      [
+        {
+          text: "No",
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: () => handleUpdateProfile({ driversLicense: "" }),
+        },
+      ]
+    );
   };
   const removeInPss = () => {
     Alert.alert(
@@ -268,7 +340,13 @@ function UploadDocumentsScreen(props) {
     );
   };
 
-  const VerificationItem = ({ onPress, title, uploaded = false, onDelete }) => {
+  const VerificationItem = ({
+    onPress,
+    title,
+    uploaded = false,
+    onDelete,
+    status,
+  }) => {
     return (
       <Pressable
         onPress={onPress}
@@ -280,9 +358,56 @@ function UploadDocumentsScreen(props) {
             paddingVertical: 16,
           },
         ]}>
-        <AppText size='16' style={[styles.mh10]}>
-          {title}
-        </AppText>
+        <View>
+          <AppText size='16' style={[styles.mh10]}>
+            {title}
+          </AppText>
+          {uploaded && status === "pending" ? (
+            <View
+              style={{
+                backgroundColor: colors.opaquePrimary,
+                borderRadius: 20,
+                padding: 3,
+                width: "auto",
+              }}>
+              <AppText
+                size='16'
+                style={[styles.mh10, { color: colors.primary }]}>
+                Verification ongoing
+              </AppText>
+            </View>
+          ) : null}
+          {uploaded && status === "failed" ? (
+            <View
+              style={{
+                backgroundColor: colors.dangerLight,
+                borderRadius: 20,
+                padding: 3,
+                width: "auto",
+              }}>
+              <AppText
+                size='16'
+                style={[styles.mh10, { color: colors.danger }]}>
+                Verification failed
+              </AppText>
+            </View>
+          ) : null}
+          {uploaded && status === "success" ? (
+            <View
+              style={{
+                backgroundColor: colors.successLight,
+                borderRadius: 20,
+                padding: 3,
+                width: "auto",
+              }}>
+              <AppText
+                size='16'
+                style={[styles.mh10, { color: colors.success }]}>
+                Verification Successful
+              </AppText>
+            </View>
+          ) : null}
+        </View>
         <View style={[styles.row, { marginLeft: "auto" }]}>
           {uploaded ? (
             <Pressable onPress={onDelete} style={[styles.mh10]}>
@@ -312,22 +437,39 @@ function UploadDocumentsScreen(props) {
   return (
     <View style={styles.container}>
       <VerificationItem
+        title='Driver’s License'
+        onPress={uploadLicense}
+        uploaded={user.driversLicense}
+        onDelete={removeLicense}
+        status={user.driversLicenseVerificationStatus}
+      />
+      <VerificationItem
         title='National ID Card'
         uploaded={user.nationalId}
         onPress={uploadNationalId}
         onDelete={removeNID}
+        status={user.nationalIdVerificationStatus}
       />
       <VerificationItem
         title='Voter’s card'
         onPress={uploadVotersCard}
         uploaded={user.votersCard}
         onDelete={removeVoterscard}
+        status={user.votersCardVerificationStatus}
       />
       <VerificationItem
         title='Valid Passport'
         uploaded={user.internationalPassport}
         onPress={uploadInternationalPassport}
         onDelete={removeInPss}
+        status={user.internationalPassportVerificationStatus}
+      />
+      <VerificationItem
+        title='NIN Slip'
+        onPress={uploadNIN}
+        uploaded={user.ninSlip}
+        onDelete={removeNIN}
+        status={user.ninSlipVerificationStatus}
       />
       <ActivityIndicator animating={loading} color={colors.primary} />
     </View>

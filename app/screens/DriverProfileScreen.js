@@ -1,30 +1,193 @@
-import React, { useState } from "react";
+/** @format */
+
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
   Pressable,
   ImageBackground,
   ScrollView,
+  FlatList,
+  TouchableOpacity,
+  Linking,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import colors from "../config/colors";
 import AppText from "../components/AppText";
 import AppButton from "../components/AppButton";
-import ConversationItem from "../components/ConversationItem";
+import reviewApi from "../api/reviews";
+import ReviewAndRatingItem from "../components/ReviewAndRatingItem";
+import auth from "../api/auth";
+import AuthContext from "../contexts/auth";
 
 function DriverProfileScreen(props) {
   const [showing, setShowing] = useState("about");
-  const [messages, setMessages] = useState([1, 2, 3, 4, 5, 6]);
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const ratings = [1, 2, 3, 4, 5];
+
+  const { user } = useContext(AuthContext);
+  const userId = props.route?.params?.userId;
+  console.log("userId", userId);
+
+  const getUserProfile = async (userId) => {
+    setLoadingProfile(true);
+
+    const { data, error } = await auth.getUserProfile(userId);
+    if (!error && data) {
+      setProfile(data);
+    }
+    setLoadingProfile(false);
+  };
+  const getMyReviews = async () => {
+    setLoadingReviews(true);
+
+    const { data, error } = await reviewApi.getMyReviews();
+    if (!error && data) {
+      setReviews(data);
+    }
+    setLoadingReviews(false);
+  };
+  const getUserReviews = async (userId) => {
+    setLoadingReviews(true);
+
+    const { data, error } = await reviewApi.getUserReviews(userId);
+    if (!error && data) {
+      setReviews(data);
+    }
+    setLoadingReviews(false);
+  };
+  useEffect(() => {
+    if (userId) {
+      getUserReviews(userId);
+      getUserProfile(userId);
+    } else {
+      getMyReviews();
+      getUserProfile(user._id);
+    }
+  }, []);
+
+  const sum = profile?.ratings?.reduce((a, b) => a + b, 0);
+  const userRating = sum / profile?.ratings?.length || 0;
+  const AboutMe = () => {
+    if (showing !== "about") return null;
+    return (
+      <ScrollView
+        contentContainerStyle={styles.ph32}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}>
+        {loadingProfile && (
+          <ActivityIndicator
+            animating={loadingProfile}
+            color={colors.primary}
+          />
+        )}
+        <View style={styles.mt10}>
+          <AppText style={[styles.unselectedText]}>Name</AppText>
+          <AppText size='16' style={[styles.black]}>
+            {profile?.firstName} {profile?.lastName}
+          </AppText>
+        </View>
+        <View style={styles.mt10}>
+          <AppText style={[styles.unselectedText]}>Joined on</AppText>
+          <AppText size='16' style={[styles.black]}>
+            {profile?.createdAt
+              ? new Date(profile?.createdAt).toDateString()
+              : "Not Available"}
+          </AppText>
+        </View>
+        <View style={styles.mt10}>
+          <AppText style={[styles.unselectedText]}>
+            No. of successful Deliveries
+          </AppText>
+          <AppText size='16' style={[styles.black]}>
+            {profile?.trips}
+          </AppText>
+        </View>
+        <View style={styles.mt10}>
+          <AppText style={[styles.unselectedText]}>Ratings</AppText>
+          <View style={[styles.row]}>
+            {/* <Ionicons name='star' color={colors.primary} size={15} />
+            <Ionicons name='star' color={colors.primary} size={15} />
+            <Ionicons name='star' color={colors.primary} size={15} />
+            <Ionicons name='star' color={colors.primary} size={15} />
+          */}
+            {/* <Ionicons name='star-outline' color={colors.greyBg} size={15} /> */}
+            <View
+              style={[
+                styles.row,
+                { justifyContent: "space-around" },
+                styles.mv10,
+              ]}>
+              {ratings.map((i, index) => (
+                <Ionicons
+                  key={index}
+                  name={i > userRating ? "star-outline" : "star"}
+                  size={15}
+                  color={i > userRating ? colors.black : colors.primary}
+                />
+              ))}
+            </View>
+            <AppText size='16'>
+              {userRating}
+              <AppText size='x-small' style={styles.light}>
+                {" "}
+                ({profile?.trips} deliveries)
+              </AppText>
+            </AppText>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  };
+
+  const Reviews = () => {
+    if (showing !== "reviews") return null;
+    return (
+      <FlatList
+        contentContainerStyle={[
+          styles.container,
+          { padding: 16, backgroundColor: colors.white },
+        ]}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        data={reviews}
+        renderItem={({ item }) => (
+          <ReviewAndRatingItem
+            createdAt={item.createdAt}
+            comment={item.comment}
+            rating={item.rating}
+            sender={item.sender}
+          />
+        )}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            {loadingReviews && (
+              <ActivityIndicator
+                animating={loadingReviews}
+                color={colors.primary}
+              />
+            )}
+            <AppText>Your reviews will show here</AppText>
+          </View>
+        }
+      />
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Pressable
         onPress={() => {
           props.navigation.goBack();
         }}
-        style={styles.backButton}
-      >
+        style={styles.backButton}>
         <Ionicons
-          name="arrow-back"
+          name='arrow-back'
           size={20}
           onPress={() => {
             props.navigation.goBack();
@@ -33,39 +196,59 @@ function DriverProfileScreen(props) {
       </Pressable>
       <View style={styles.profileDetails}>
         <View style={styles.blue}>
-          <Ionicons name="image" color={colors.black} size={50} />
+          <Ionicons name='image' color={colors.black} size={50} />
         </View>
         <View style={styles.white}>
-          <ImageBackground style={styles.avatar}>
-            <FontAwesome5 name="user" color={colors.secondary} size={35} />
+          <ImageBackground
+            style={styles.avatar}
+            borderRadius={85 / 2}
+            source={{ uri: profile?.profilePhoto }}>
+            {!profile?.profilePhoto && (
+              <FontAwesome5 name='user' color={colors.secondary} size={35} />
+            )}
           </ImageBackground>
           <View style={styles.column}>
-            <AppText size="medium">Adekola James Ajakaiye</AppText>
+            {loadingProfile && (
+              <ActivityIndicator
+                animating={loadingProfile}
+                color={colors.primary}
+              />
+            )}
+            <AppText size='medium'>
+              {profile?.firstName} {profile?.lastName}
+            </AppText>
             <View style={[styles.row]}>
-              <Ionicons name="star" color={colors.primary} size={15} />
-              <Ionicons name="star" color={colors.primary} size={15} />
-              <Ionicons name="star" color={colors.primary} size={15} />
-              <Ionicons name="star" color={colors.primary} size={15} />
-              <Ionicons name="star" color={colors.greyBg} size={15} />
-              <AppText size="16">
+              <Ionicons name='star' color={colors.primary} size={15} />
+              <Ionicons name='star' color={colors.primary} size={15} />
+              <Ionicons name='star' color={colors.primary} size={15} />
+              <Ionicons name='star' color={colors.primary} size={15} />
+              <Ionicons name='star' color={colors.greyBg} size={15} />
+              <AppText size='16'>
                 4.5
-                <AppText size="x-small" style={styles.light}>
-                  {" "}
-                  (110 deliveries)
+                <AppText size='x-small' style={styles.light}>
+                  ({profile?.trips} deliveries)
                 </AppText>
               </AppText>
             </View>
             <View style={[styles.row, styles.mt10]}>
-              <View style={styles.iconWrap}>
+              <TouchableOpacity
+                onPress={() => {
+                  Linking.openURL(`mailto: ${profile?.email}`);
+                }}
+                style={styles.iconWrap}>
                 <Ionicons
-                  name="md-send-sharp"
+                  name='md-send-sharp'
                   color={colors.danger}
                   size={15}
                 />
-              </View>
-              <View style={styles.iconWrap}>
-                <Ionicons name="call" color={colors.success} size={15} />
-              </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconWrap}
+                onPress={() => {
+                  Linking.openURL(`tel:${profile?.phoneNumber}`);
+                }}>
+                <Ionicons name='call' color={colors.success} size={15} />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -77,15 +260,13 @@ function DriverProfileScreen(props) {
               styles.selectButton,
               showing === "about" ? styles.selected : styles.unselected,
             ]}
-            onPress={() => setShowing("about")}
-          >
+            onPress={() => setShowing("about")}>
             <AppText
               style={[
                 showing === "about"
                   ? styles.selectedText
                   : styles.unselectedText,
-              ]}
-            >
+              ]}>
               About
             </AppText>
           </Pressable>
@@ -94,85 +275,31 @@ function DriverProfileScreen(props) {
               styles.selectButton,
               showing === "reviews" ? styles.selected : styles.unselected,
             ]}
-            onPress={() => setShowing("reviews")}
-          >
+            onPress={() => setShowing("reviews")}>
             <AppText
               style={[
                 showing === "reviews"
                   ? styles.selectedText
                   : styles.unselectedText,
-              ]}
-            >
+              ]}>
               Reviews
             </AppText>
           </Pressable>
         </View>
-        {showing === "about" && (
-          <ScrollView
-            contentContainerStyle={styles.ph32}
-            showsVerticalScrollIndicator={false}
-            showsHorizontalScrollIndicator={false}
-          >
-            <View style={styles.mt10}>
-              <AppText style={[styles.unselectedText]}>Reviews</AppText>
-              <AppText size="16" style={[styles.black]}>
-                Adekola James Ajakaiye
-              </AppText>
-            </View>
-            <View style={styles.mt10}>
-              <AppText style={[styles.unselectedText]}>Joined on</AppText>
-              <AppText size="16" style={[styles.black]}>
-                Saturday, June 12, 2021. 4:50pm
-              </AppText>
-            </View>
-            <View style={styles.mt10}>
-              <AppText style={[styles.unselectedText]}>
-                No. of successful Deliveries
-              </AppText>
-              <AppText size="16" style={[styles.black]}>
-                123
-              </AppText>
-            </View>
-            <View style={styles.mt10}>
-              <AppText style={[styles.unselectedText]}>Ratings</AppText>
-              <View style={[styles.row]}>
-                <Ionicons name="star" color={colors.primary} size={15} />
-                <Ionicons name="star" color={colors.primary} size={15} />
-                <Ionicons name="star" color={colors.primary} size={15} />
-                <Ionicons name="star" color={colors.primary} size={15} />
-                <Ionicons name="star" color={colors.greyBg} size={15} />
-                <AppText size="16">
-                  4.5
-                  <AppText size="x-small" style={styles.light}>
-                    {" "}
-                    (110 deliveries)
-                  </AppText>
-                </AppText>
-              </View>
-            </View>
-          </ScrollView>
-        )}
-        {showing === "reviews" && (
-          <ScrollView
-            contentContainerStyle={styles.ph32}
-            showsVerticalScrollIndicator={false}
-            showsHorizontalScrollIndicator={false}
-          >
-            {messages.map((i, index) => (
-              <ConversationItem key={index} />
-            ))}
-          </ScrollView>
-        )}
+        <AboutMe />
+        <Reviews />
       </View>
-      <View style={[styles.mtAuto]}>
-        <AppButton
-          title="Connect with driver"
-          fullWidth
-          onPress={() => {
-            props.navigation.navigate("TransactionDetailsScreen");
-          }}
-        />
-      </View>
+      {profile?._id !== user._id && (
+        <View style={[styles.mtAuto]}>
+          <AppButton
+            title='Connect with driver'
+            fullWidth
+            onPress={() => {
+              props.navigation.navigate("TransactionDetailsScreen");
+            }}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -200,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.white,
     top: 32,
-    left: 32,
+    left: 10,
     elevation: 2,
     justifyContent: "center",
     alignItems: "center",
@@ -214,6 +341,8 @@ const styles = StyleSheet.create({
 
     alignItems: "center",
   },
+  bold: { fontWeight: "bold" },
+
   column: {
     flexDirection: "column",
     justifyContent: "center",
@@ -224,6 +353,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  empty: { minHeight: 200, justifyContent: "center", alignItems: "center" },
+
   iconWrap: {
     width: 33.57,
     height: 33.57,
@@ -265,6 +396,7 @@ const styles = StyleSheet.create({
     height: 50,
     flexDirection: "row",
   },
+  separator: { height: 20, width: 10 },
   unselected: {
     borderBottomColor: colors.light,
     borderBottomWidth: 2,

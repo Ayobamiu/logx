@@ -1,28 +1,34 @@
 /** @format */
 
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
-  Dimensions,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import AppTextInput from "../components/AppTextInput";
 import SectionHeader from "../components/SectionHeader";
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
 import colors from "../config/colors";
-import MapView, { Marker, Polygon, Polyline } from "react-native-maps";
+import MapView, { Marker } from "react-native-maps";
 import useLocation from "../hooks/useLocation";
 import AppButton from "../components/AppButton";
 import { Formik } from "formik";
 import AppText from "../components/AppText";
 import * as Yup from "yup";
+import * as Location from "expo-location";
 import PackageContext from "../contexts/package";
 import placeApi from "../api/places";
 import AuthContext from "../contexts/auth";
-import MapLabel from "../components/MapLabel";
+import MapViewDirections from "react-native-maps-directions";
+import showToast from "../config/showToast";
+import { get } from "../utility/cache";
+import AppModal from "../components/AppModal";
+import SelectJorneyTypeAnyWhere from "../components/SelectJorneyTypeAnyWhere";
+
 // import {  } from "react-native-svg";
 
 const validationSchema = Yup.object().shape({
@@ -40,17 +46,26 @@ const validationSchema = Yup.object().shape({
 
 function EnterLocationScreen(props) {
   const { packages, setPackages } = useContext(PackageContext);
-  const { user, setUser } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [predictions, setPredictions] = useState([]);
   const [loadingPredictions, setLoadingPredictions] = useState(false);
   const { getLocation } = useLocation();
-  const [location, setLocation] = useState(null);
   const [showToSuggestions, setShowToSuggestions] = useState(false);
   const [showFromSuggestions, setShowFromSuggestions] = useState(false);
   const [deliveryPoint, setDeliveryPoint] = useState(null);
+  console.log("deliveryPoint", deliveryPoint);
   const [pickUPoint, setPickUPoint] = useState(null);
+  console.log("pickUPoint", pickUPoint);
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [pickUpAddress, setPickUpAddress] = useState("");
+  const [deliveryRegion, setDeliveryRegion] = useState("");
+  const [pickUpRegion, setPickUpRegion] = useState("");
+  const [journeyType, setJourneyType] = useState("");
+  const [openJourneyTypePanel, setOpenJourneyTypePanel] = useState(false);
+
+  const [sameRegionError, setSameRegionError] = useState(false);
+  const [differentRegionError, setDifferentRegionError] = useState(false);
+
   const closeAllSuggest = () => {
     setShowToSuggestions(false);
     setShowFromSuggestions(false);
@@ -72,7 +87,20 @@ function EnterLocationScreen(props) {
         longitudeDelta: 0.0421,
       });
     })();
-  }, []);
+    (async () => {
+      const type = await get("journey:type");
+      setJourneyType(type);
+    })();
+
+    return () => {
+      setRegion({
+        latitude: 8.9233587,
+        longitude: -0.3674603,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    };
+  }, [journeyType]);
 
   const getPredictions = async (value) => {
     setLoadingPredictions(true);
@@ -88,8 +116,10 @@ function EnterLocationScreen(props) {
       .catch((error) => {});
     setLoadingPredictions(false);
   };
+
+  const [loadingLatLong, setLoadingLatLong] = useState(false);
   const getLatLong = async (placeId, type) => {
-    // setLoadingPredictions(true);
+    setLoadingLatLong(true);
     await placeApi
       .getLatAndLong(placeId)
       .then((response) => {
@@ -104,8 +134,11 @@ function EnterLocationScreen(props) {
             longitudeDelta: 0.0421,
           });
         }
+        setLoadingLatLong(false);
       })
-      .catch((error) => {});
+      .catch((error) => {
+        setLoadingLatLong(false);
+      });
   };
 
   const AutoCompleteBox = ({
@@ -157,10 +190,39 @@ function EnterLocationScreen(props) {
     );
   };
 
+  const getPickUpAndDeliveryRegion = async () => {
+    const pickUpAddressData = await Location.reverseGeocodeAsync({
+      latitude: pickUPoint?.latitude,
+      longitude: pickUPoint?.longitude,
+    }).catch((error) => {});
+    setPickUpRegion(pickUpAddressData && pickUpAddressData[0]?.region);
+    const deliveryAddressData = await Location.reverseGeocodeAsync({
+      latitude: deliveryPoint?.latitude,
+      longitude: deliveryPoint?.longitude,
+    }).catch((error) => {});
+    setDeliveryRegion(deliveryAddressData && deliveryAddressData[0]?.region);
+  };
+
+  useEffect(() => {
+    getPickUpAndDeliveryRegion();
+  }, [pickUPoint, deliveryPoint]);
   return (
     <Formik
       initialValues={{}}
       onSubmit={async (values) => {
+        if (journeyType === "intra-state") {
+          if (pickUpRegion !== deliveryRegion) {
+            setDifferentRegionError(true);
+            //return showPopUp
+            return;
+          }
+        }
+        if (journeyType === "inter-state") {
+          if (pickUpRegion === deliveryRegion) {
+            setSameRegionError(true);
+            return;
+          }
+        }
         if (packages.length > 0) {
           let currentPackages = packages;
           currentPackages[currentPackages.length - 1] = {
@@ -194,9 +256,15 @@ function EnterLocationScreen(props) {
       {({ handleChange, handleBlur, handleSubmit, errors, values }) => (
         <View style={styles.container}>
           <View style={styles.inputBox}>
-            <SectionHeader headerText='Enter destination details' />
-
+            <View style={{ flexDirection: "row" }}>
+              <SectionHeader headerText='Enter destination details' />
+              <ActivityIndicator
+                color={colors.primary}
+                animating={loadingLatLong}
+              />
+            </View>
             <AppTextInput
+              editable={!loadingLatLong}
               white
               placeholder='Where are you picking from?'
               style={{ paddingHorizontal: 10 }}
@@ -245,6 +313,7 @@ function EnterLocationScreen(props) {
             </AppText>
             <AppTextInput
               white
+              editable={!loadingLatLong}
               placeholder='Where are you delivering to?'
               style={{ paddingHorizontal: 10 }}
               Icon={
@@ -298,30 +367,39 @@ function EnterLocationScreen(props) {
               loadingEnabled={true}
               showsUserLocation={true}>
               {pickUPoint && deliveryPoint && (
-                <Polyline
-                  lineDashPattern={[0]}
-                  coordinates={[{ ...deliveryPoint }, { ...pickUPoint }]}
-                  strokeColor='#000' // fallback for when `strokeColors` is not supported by the map-provider
-                  strokeColors={[colors.success]}
-                  strokeWidth={6}
+                <MapViewDirections
+                  origin={{ ...pickUPoint }}
+                  destination={{ ...deliveryPoint }}
+                  apikey='AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y'
+                  mode='DRIVING'
+                  timePrecision='now'
+                  strokeWidth={3}
+                  strokeColor='hotpink'
+                  tappable
+                  geodesic
+                  onError={() => {
+                    showToast(
+                      "This route is plied by Airlines. We don't deliver by Air."
+                    );
+                  }}
                 />
               )}
               {deliveryPoint && (
                 <Marker
                   coordinate={deliveryPoint}
                   title='Delivery Point'
-                  description='Delivery Point'
+                  description={deliveryAddress}
                   pinColor={colors.primary}>
-                  <MapLabel text={deliveryAddress || "Delivery Point"} />
+                  <Ionicons name='location' size={25} color={colors.primary} />
                 </Marker>
               )}
               {pickUPoint && (
                 <Marker
                   coordinate={pickUPoint}
                   title='Pick Up Point'
-                  description='Pick Up Point'
+                  description={pickUpAddress}
                   pinColor={colors.primary}>
-                  <MapLabel text={pickUpAddress || "Pick Up Point"} />
+                  <Ionicons name='location' size={25} color={colors.primary} />
                 </Marker>
               )}
             </MapView>
@@ -329,13 +407,96 @@ function EnterLocationScreen(props) {
 
           <View style={styles.button}>
             <AppButton
-              title='Done'
+              title={
+                loadingLatLong ? (
+                  <ActivityIndicator animating={loadingLatLong} />
+                ) : (
+                  "Done"
+                )
+              }
               fullWidth
               // onPress={() => props.navigation.navigate("AddPackageScreen")}
               onPress={handleSubmit}
-              // disabled={loading}
+              disabled={loadingLatLong}
             />
           </View>
+
+          <AppModal isVisble={differentRegionError}>
+            <View style={styles.modalBox}>
+              <View style={styles.modalContainer}>
+                <Ionicons
+                  name='close-circle'
+                  color={colors.primary}
+                  size={67}
+                />
+                <AppText style={{ fontWeight: "bold", marginVertical: 10 }}>
+                  Not Valid.
+                </AppText>
+                <AppText style={{ textAlign: "center" }}>
+                  Sorry, you can not use this option. We noticed you are sending
+                  between different cities. Go back and choose{" "}
+                  <AppText style={{ fontWeight: "bold" }}>intercity</AppText> or
+                  change your address.
+                </AppText>
+                <AppButton
+                  title='Choose Inter-City'
+                  style={{ marginVertical: 10 }}
+                  onPress={() => {
+                    setOpenJourneyTypePanel(true);
+                    setDifferentRegionError(false);
+                    // props.navigation.goBack();
+                  }}
+                />
+                <AppButton
+                  title='Change My Address'
+                  style={{ marginVertical: 10 }}
+                  onPress={() => {
+                    setDifferentRegionError(false);
+                  }}
+                />
+              </View>
+            </View>
+          </AppModal>
+          <AppModal isVisble={sameRegionError}>
+            <View style={styles.modalBox}>
+              <View style={styles.modalContainer}>
+                <Ionicons
+                  name='close-circle'
+                  color={colors.primary}
+                  size={67}
+                />
+                <AppText style={{ fontWeight: "bold", marginVertical: 10 }}>
+                  Not Valid.
+                </AppText>
+                <AppText style={{ textAlign: "center" }}>
+                  Sorry, you can not use this option. We noticed you are sending
+                  within the same city. Go back and choose{" "}
+                  <AppText style={{ fontWeight: "bold" }}>intracity</AppText> or
+                  change your address.
+                </AppText>
+                <AppButton
+                  title='Choose Intra-city'
+                  style={{ marginVertical: 10 }}
+                  onPress={() => {
+                    setSameRegionError(false);
+                    setOpenJourneyTypePanel(true);
+                  }}
+                />
+                <AppButton
+                  title='Change My Address'
+                  style={{ marginVertical: 10 }}
+                  onPress={() => {
+                    setSameRegionError(false);
+                  }}
+                />
+              </View>
+            </View>
+          </AppModal>
+          <SelectJorneyTypeAnyWhere
+            visible={openJourneyTypePanel}
+            toggleModal={() => setOpenJourneyTypePanel(false)}
+            onContinue={(r) => setJourneyType(r)}
+          />
         </View>
       )}
     </Formik>
@@ -375,6 +536,23 @@ const styles = StyleSheet.create({
   mapBox: {
     flex: 0.7,
     flexGrow: 1,
+  },
+  modalBox: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.opaque,
+  },
+  modalContainer: {
+    minHeight: 100,
+    minWidth: 100,
+    backgroundColor: colors.white,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    maxWidth: "70%",
+    padding: 20,
   },
   suggestionsBox: {
     maxHeight: 200,

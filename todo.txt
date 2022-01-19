@@ -1,2 +1,9 @@
 show real-time position of driver 
 select 'inter state' or 'intra-state' journey.
+
+
+
+onLocationChange:
+    evry user emits driver:location:update with {location, userId}
+    on driver:location:update; 
+        server gets all trips associated to the user and send the location to all the trip rooms

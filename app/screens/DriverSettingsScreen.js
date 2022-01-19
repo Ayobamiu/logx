@@ -31,7 +31,7 @@ function DriverSettingsScreen(props) {
             {title}
           </AppText>
           <AppText size='16' style={[styles.mh10, { color: colors.light }]}>
-            {subTitle}
+            {uploaded ? "Completed" : "Start now"}
           </AppText>
         </View>
         <View style={[styles.row, { marginLeft: "auto" }]}>
@@ -54,7 +54,20 @@ function DriverSettingsScreen(props) {
     );
   };
 
-  const [tab, setTab] = useState("Documents");
+  const aboutMeVerified =
+    user.firstName && user.lastName && user.phoneNumber && user.deliveryType;
+
+  // const idVerified =
+  //   user.driversLicenseVerificationStatus === "success" ||
+  //   user.nationalIdVerificationStatus === "success" ||
+  //   user.votersCardVerificationStatus === "success";
+
+  const idVerified =
+    user.driversLicenseVerificationStatus === "success" ||
+    user.ninSlipVerificationStatus === "success" ||
+    user.internationalPassportVerificationStatus === "success" ||
+    user.nationalIdVerificationStatus === "success" ||
+    user.votersCardVerificationStatus === "success";
 
   return (
     <ScrollView style={styles.container}>
@@ -63,102 +76,41 @@ function DriverSettingsScreen(props) {
         account
       </AppText>
 
-      <View
-        style={{
-          width: 224,
-          height: 33,
-          backgroundColor: colors.inputGray,
-          borderRadius: 16,
-          alignSelf: "center",
-          marginVertical: 20,
-          flexDirection: "row",
-          alignItems: "center",
-        }}>
-        <Pressable
-          onPress={() => setTab("Documents")}
-          style={[styles.tab, tab === "Documents" && styles.selectedTab]}>
-          <AppText
-            style={[
-              { color: colors.light, fontWeight: "bold" },
-              tab === "Documents" && { color: colors.black },
-            ]}>
-            Documents
-          </AppText>
-        </Pressable>
-        <Pressable
-          onPress={() => setTab("Submitted")}
-          style={[styles.tab, tab === "Submitted" && styles.selectedTab]}>
-          <AppText
-            style={[
-              { color: colors.light, fontWeight: "bold" },
-              tab === "Submitted" && { color: colors.black },
-            ]}>
-            Submitted
-          </AppText>
-        </Pressable>
+      <View style={{ marginVertical: 10 }}>
+        <VerificationItem
+          title='About you'
+          onPress={() => {
+            props.navigation.navigate("AddDriverDetailsScreen");
+          }}
+          uploaded={aboutMeVerified}
+        />
+
+        {/* <VerificationItem title='About Vehicle' subTitle='Start now' />
+        <VerificationItem
+          title='Driver’s License'
+          subTitle='Start now'
+          onPress={() => {
+            props.navigation.navigate("UploadLicenseScreen");
+          }}
+          uploaded={user.driversLicense}
+        /> */}
+        <VerificationItem
+          uploaded={idVerified}
+          title='Government-issued photo ID'
+          onPress={() => {
+            props.navigation.navigate("UploadDocumentsScreen");
+          }}
+        />
+
+        {/* <VerificationItem
+          title='Valid Vehicle Isnurance Policy'
+          subTitle='Start now'
+          onPress={() => {
+            props.navigation.navigate("UploadVehicleInsuranceScreen");
+          }}
+          uploaded={user.insurancePolicy}
+        /> */}
       </View>
-
-      {tab === "Documents" ? (
-        <View>
-          <VerificationItem
-            title='About Driver/Delivery Personel'
-            subTitle='Start now'
-            onPress={() => {
-              props.navigation.navigate("AddDriverDetailsScreen");
-            }}
-          />
-
-          <VerificationItem title='About Vehicle' subTitle='Start now' />
-          <VerificationItem
-            title='Driver’s License'
-            subTitle='Start now'
-            onPress={() => {
-              props.navigation.navigate("UploadLicenseScreen");
-            }}
-            uploaded={user.driversLicense}
-          />
-          <VerificationItem
-            title='Identity'
-            subTitle='Start now'
-            onPress={() => {
-              props.navigation.navigate("UploadDocumentsScreen");
-            }}
-          />
-
-          <VerificationItem
-            title='Valid Vehicle Isnurance Policy'
-            subTitle='Start now'
-            onPress={() => {
-              props.navigation.navigate("UploadVehicleInsuranceScreen");
-            }}
-            uploaded={user.insurancePolicy}
-          />
-        </View>
-      ) : (
-        <View>
-          {user.driversLicense && (
-            <VerificationItem
-              title='Driver’s License'
-              subTitle='Start now'
-              onPress={() => {
-                props.navigation.navigate("UploadLicenseScreen");
-              }}
-              uploaded={user.driversLicense}
-            />
-          )}
-
-          {user.insurancePolicy && (
-            <VerificationItem
-              title='Valid Vehicle Isnurance Policy'
-              subTitle='Start now'
-              onPress={() => {
-                props.navigation.navigate("UploadVehicleInsuranceScreen");
-              }}
-              uploaded={user.insurancePolicy}
-            />
-          )}
-        </View>
-      )}
     </ScrollView>
   );
 }

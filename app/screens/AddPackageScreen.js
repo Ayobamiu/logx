@@ -170,17 +170,7 @@ function AddPackageScreen(props) {
               error={errors.receipentNumber}
               visible={errors.receipentNumber}
             />
-            <AppTextInput
-              autoCapitalize='none'
-              title='Receiver’s Email'
-              keyboardType='email-address'
-              onChangeText={handleChange("receipentEmail")}
-              onBlur={handleBlur("receipentEmail")}
-            />
-            <ErrorMessages
-              error={errors.receipentEmail}
-              visible={errors.receipentEmail}
-            />
+
             <AppTextInput
               title='Description'
               multiline={true}

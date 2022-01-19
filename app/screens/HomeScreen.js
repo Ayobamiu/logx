@@ -25,6 +25,7 @@ import AppButton from "../components/AppButton";
 import TripsContext from "../contexts/trips";
 import placesApi from "../api/places";
 import TripContext from "../contexts/trip";
+import SelectJorneyTypeAnyWhere from "../components/SelectJorneyTypeAnyWhere";
 import PayWithFlutterWave from "../components/PayWithFlutterWave";
 import useAuth from "../auth/useAuth";
 import ModeContext from "../contexts/mode";
@@ -48,6 +49,7 @@ function HomeScreen(props) {
   const [loadingtrips, setLoadingtrips] = useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [openPayment, setOpenPayment] = useState(false);
+  const [openJourneyTypePanel, setOpenJourneyTypePanel] = useState(false);
 
   const loadTrips = async () => {
     setLoadingtrips(true);
@@ -208,7 +210,7 @@ function HomeScreen(props) {
                 ]}>
                 <FontAwesome5 name='car-side' size={24} color='black' />
                 <AppText style={styles.mv10}>
-                  You Ongoing Trips will Appear Here
+                  Your Ongoing Trips will Appear Here
                 </AppText>
               </View>
             )}
@@ -346,13 +348,19 @@ function HomeScreen(props) {
             />
           }
           // onPress={() => props.navigation.navigate("EnterLocationScreen")}
-          onPress={() => props.navigation.navigate("SelectJourneyType")}
+          // onPress={() => props.navigation.navigate("SelectJourneyType")}
+          onPress={() => setOpenJourneyTypePanel(true)}
         />
       </View>
 
       <PayWithFlutterWave
         visible={openPayment}
         toggleModal={() => setOpenPayment(false)}
+      />
+      <SelectJorneyTypeAnyWhere
+        visible={openJourneyTypePanel}
+        toggleModal={() => setOpenJourneyTypePanel(false)}
+        onContinue={() => props.navigation.navigate("EnterLocationScreen")}
       />
     </View>
   );
