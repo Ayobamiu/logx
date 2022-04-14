@@ -16,21 +16,33 @@ import showToast from "../config/showToast";
 import AppButton from "./AppButton";
 import AppText from "./AppText";
 import AppTextInput from "./AppTextInput";
-import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import transactionAPIs from "../api/transaction";
 import useAuth from "../auth/useAuth";
 import AuthContext from "../contexts/auth";
+import debounce from "lodash.debounce";
+import TransactionContext from "../contexts/transactions";
 
-function PayWithFlutterWave({ visible, toggleModal }) {
+function PayWithFlutterWaveComponent({ visible, toggleModal }) {
+  let mounted = true;
   const [amount, setAmount] = useState();
   const [processing, setProcessing] = useState(false);
   const [useProcessingModal, setUseProcessingModal] = useState(false);
+  const { transactions, setTransactions } = useContext(TransactionContext);
+
   const { saveUser } = useAuth();
   const { user } = useContext(AuthContext);
 
-  const handlePaymentOnTheServer = async (transaction_id) => {
-    setUseProcessingModal(true);
-    setProcessing(true);
+  useEffect(() => {
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handlePaymentOnTheServer = async (transaction_id, transactionData) => {
+    if (mounted) {
+      setUseProcessingModal(true);
+      setProcessing(true);
+    }
 
     const { data, error } = await transactionAPIs.addOrRemoveMoney({
       type: "plus",
@@ -39,22 +51,42 @@ function PayWithFlutterWave({ visible, toggleModal }) {
       transaction_id,
       payer: user._id,
       receipent: user._id,
+      for: "deposit",
+      serviceFee: amount * 0.017,
+      data: transactionData,
     });
 
     if (error) {
-      setProcessing(false);
+      if (mounted) {
+        setProcessing(false);
+      }
       showToast("Failed, Try Again!");
     }
     if (!error && data) {
-      saveUser(data.user);
-      setProcessing(false);
+      if (mounted) {
+        saveUser(data.user);
+        setProcessing(false);
+        if (data.transactions) {
+          setTransactions([data.transactions, ...transactions]);
+        }
+      }
+
       showToast("Successful!");
     }
     setTimeout(() => {
-      setUseProcessingModal(false);
+      if (mounted) {
+        setUseProcessingModal(false);
+      }
       toggleModal();
     }, 200);
   };
+
+  const handleRedirect = (data) => {
+    if (data.status === "successful") {
+      handlePaymentOnTheServer(data.transaction_id, data);
+    }
+  };
+  // const handler = useCallback(debounce(someFunction, 2000), []);
 
   return (
     <View>
@@ -96,7 +128,9 @@ function PayWithFlutterWave({ visible, toggleModal }) {
                     placeholder='Amount'
                     title='How much?'
                     onChangeText={(text) => {
-                      setAmount(text);
+                      if (mounted) {
+                        setAmount(text);
+                      }
                     }}
                     defaultValue={amount}
                     keyboardType='numeric'
@@ -125,17 +159,13 @@ function PayWithFlutterWave({ visible, toggleModal }) {
                   />
 
                   <PayWithFlutterwave
-                    onRedirect={(data) => {
-                      if (data.status === "successful") {
-                        handlePaymentOnTheServer(data.transaction_id);
-                      }
-                    }}
+                    onRedirect={handleRedirect}
                     options={{
                       tx_ref: new Date().toString(),
                       authorization:
-                        "FLWPUBK_TEST-5120f20f66db336ffc0f6131bcc49936-X",
+                        "FLWPUBK-cb97fcca397253032055065ae719157c-X",
                       customer: {
-                        email: "customer-email@example.com",
+                        email: user.email,
                       },
                       amount: Number(amount),
                       currency: "NGN",
@@ -215,4 +245,4 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 });
-export default PayWithFlutterWave;
+export default PayWithFlutterWaveComponent;

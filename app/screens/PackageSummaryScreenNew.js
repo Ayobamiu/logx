@@ -28,7 +28,12 @@ import TripContext from "../contexts/trip";
 import socket from "../api/socket";
 import AddCustomPrice from "../components/AddCustomPrice";
 import { get } from "../utility/cache";
+import { aboutMyNewTrip } from "../hooks/useNotification";
+import PayWithFlutterWave from "../components/PayWithFlutterWave";
+import debounce from "lodash.debounce";
 function PackageSummaryScreenNew(props) {
+  let mounted = true;
+
   const { saveUser } = useAuth();
   const [proceed, setProceed] = useState(false);
   const { user, setUser } = useContext(AuthContext);
@@ -44,27 +49,42 @@ function PackageSummaryScreenNew(props) {
   const [estimatedCost, setEstimatedCost] = useState(0);
   const [showSelectPayment, setShowSelectPayment] = useState(false);
   const [showInsufficientFund, setShowInsufficientFund] = useState(false);
+  const [openPayment, setOpenPayment] = useState(false);
+
   const [paymentMethod, setPaymentMethod] = useState("wallet");
   const [distance, setDistance] = useState();
   const [journeyType, setJourneyType] = useState("");
   useEffect(() => {
+    // if (packages.length === 0) {
+    //   props.navigation.navigate("Home");
+    // }
     (async () => {
       setLoading(true);
-
+      //check
       const { data, error } = await placesApi.estimateTripCostAndDistance(
         packages
       );
       if (!error && data) {
-        setEstimatedCostOriginal(data.price);
-        setEstimatedCost(data.price);
-        setDistance(data.distance);
+        if (mounted) {
+          setEstimatedCostOriginal(data.price);
+          setEstimatedCost(data.price);
+          setDistance(data.distance);
+        }
       }
-      setLoading(false);
+      if (mounted) {
+        setLoading(false);
+      }
     })();
     (async () => {
       const type = await get("journey:type");
-      setJourneyType(type);
+      if (mounted) {
+        setJourneyType(type);
+      }
     })();
+
+    return () => {
+      mounted = false;
+    };
   }, [packages.length]);
 
   const DetailItem = ({ header, subHeader }) => {
@@ -131,7 +151,7 @@ function PackageSummaryScreenNew(props) {
     setLoadingPayment(true);
     const result = await authApi.updateProfile(data);
 
-    if (result.data.error) {
+    if (result.data && result.data.error) {
       setLoadingPayment(false);
       return showToast(result.data.message);
     }
@@ -146,26 +166,39 @@ function PackageSummaryScreenNew(props) {
     // props.navigation.goBack();
     setShowInsufficientFund(false);
   };
-  const handleAddTrip = async (data) => {
-    setAddingTrip(true);
+  const handleAddTrip = debounce(async (data) => {
+    if (mounted) {
+      setAddingTrip(true);
+    }
     const result = await placesApi.addTrip(data);
 
-    if (result.data.error) {
-      setAddingTrip(false);
-      return showToast(result.data.message);
+    if (result?.data?.error) {
+      if (mounted) {
+        setAddingTrip(false);
+      }
+      return showToast(result?.data.message);
     }
-    if (result.error) {
-      setAddingTrip(false);
-      return showToast(result.message);
+    if (result?.error) {
+      if (mounted) {
+        setAddingTrip(false);
+      }
+      return showToast(result?.message);
     }
-
-    setTrip(result.data);
-    setAddingTrip(false);
+    socket.emit("trip:created");
+    if (mounted) {
+      setTrip(result?.data);
+      setAddingTrip(false);
+    }
+    aboutMyNewTrip(
+      data?.packages[0]?.receipentName,
+      data?.packages[0]?.deliveryAddress,
+      result?.data
+    );
     props.navigation.navigate("AvailableDrivers");
-    setPackages([]);
-
-    socket.emit("trip:create");
-  };
+    if (mounted) {
+      setPackages([]);
+    }
+  }, 1000);
 
   const deletePackage = (packageIndex) => {
     Alert.alert("Remove Package", "Do you want to remove this package?", [
@@ -178,7 +211,9 @@ function PackageSummaryScreenNew(props) {
         onPress: () => {
           const currentPackages = [...packages];
           currentPackages.splice(packageIndex, 1);
-          setPackages(currentPackages);
+          if (mounted) {
+            setPackages(currentPackages);
+          }
         },
       },
     ]);
@@ -230,7 +265,7 @@ function PackageSummaryScreenNew(props) {
           </AppText>
           <AppText style={[{ textAlign: "center" }, styles.light]}>
             Hello, kindly fund your wallet an equivalent of the delivery before
-            you can connect witha driver.
+            you can connect with a driver.
           </AppText>
           <ActivityIndicator
             animating={loadingPayment}
@@ -239,7 +274,9 @@ function PackageSummaryScreenNew(props) {
           <AppButton
             title='Fund your wallet'
             onPress={() => {
-              handleUpdateProfile({ availableBalance: estimatedCost * 2 });
+              setShowInsufficientFund(false);
+              // handleUpdateProfile({ availableBalance: estimatedCost * 2 });
+              setOpenPayment(true);
             }}
           />
           <AppButton
@@ -331,7 +368,7 @@ function PackageSummaryScreenNew(props) {
           distance / 1000 > 150 &&  */}
         {journeyType === "inter-state" && (
           <AppButton
-            title='Offer another Price'
+            title='Offer your Price'
             onPress={() => setShowOffer(true)}
             secondary
             style={{ borderWidth: 1 }}
@@ -345,13 +382,13 @@ function PackageSummaryScreenNew(props) {
             {paymentMethod === "wallet" ? "Pay from Wallet" : "Pay on delivery"}
           </AppText>
         </View>
-        <AppText
+        {/* <AppText
           style={[{ color: colors.success }, styles.bold]}
           onPress={() => {
             setShowSelectPayment(true);
           }}>
           Change Payment Method{" "}
-        </AppText>
+        </AppText> */}
 
         <AppButton
           title='Find available delivery personel'
@@ -375,6 +412,7 @@ function PackageSummaryScreenNew(props) {
               price: estimatedCost,
               paymentMethod,
               packages,
+              journeyType,
             };
 
             if (paymentMethod === "wallet") {
@@ -384,6 +422,7 @@ function PackageSummaryScreenNew(props) {
                 handleAddTrip(tripData);
               }
             } else {
+              //check
               handleAddTrip(tripData);
             }
             // setShowSelectPayment(true);
@@ -438,6 +477,10 @@ function PackageSummaryScreenNew(props) {
           </Pressable>
         </PromptBottomSheet>
       </ScrollView>
+      <PayWithFlutterWave
+        visible={openPayment}
+        toggleModal={() => setOpenPayment(false)}
+      />
 
       <AddCustomPrice
         journeyType={journeyType}

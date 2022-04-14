@@ -20,10 +20,17 @@ function SelectJorneyTypeAnyWhere({
   const [journeyType, setJourneyType] = useState("");
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
       const type = await get("journey:type");
-      setJourneyType(type);
+      if (mounted) {
+        setJourneyType(type);
+      }
     })();
+
+    return () => {
+      mounted = false;
+    };
   }, [journeyType]);
   return (
     <PromptBottomSheet isVisble={visible} toggleModal={toggleModal}>
@@ -46,7 +53,7 @@ function SelectJorneyTypeAnyWhere({
           </AppText>
         </View>
         <MaterialCommunityIcons
-          name='circle-outline'
+          name={journeyType === "intra-state" ? "circle" : "circle-outline"}
           size={15}
           color={journeyType === "intra-state" ? colors.primary : "black"}
           style={{ marginLeft: "auto" }}
@@ -68,7 +75,7 @@ function SelectJorneyTypeAnyWhere({
           </AppText>
         </View>
         <MaterialCommunityIcons
-          name='circle-outline'
+          name={journeyType === "inter-state" ? "circle" : "circle-outline"}
           size={15}
           color={journeyType === "inter-state" ? colors.primary : "black"}
           style={{ marginLeft: "auto" }}
@@ -105,6 +112,7 @@ const styles = StyleSheet.create({
   selectedButton: {
     backgroundColor: colors.opaquePrimary,
     borderColor: colors.primary,
+    // borderWidth: 3,
   },
 });
 export default SelectJorneyTypeAnyWhere;

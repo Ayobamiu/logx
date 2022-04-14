@@ -30,24 +30,34 @@ function AddCustomPrice({
     Number(estimatedPrice + 3000),
   ]);
   useEffect(() => {
+    let mounted = true;
     if (
       estimatedPrice - 10000 > 0 &&
       !priceSuggestions.includes(estimatedPrice - 10000)
     ) {
-      setPriceSuggestions((r) => [...r, estimatedPrice - 10000]);
+      if (mounted) {
+        setPriceSuggestions((r) => [...r, estimatedPrice - 10000]);
+      }
     }
     if (
       estimatedPrice - 20000 > 0 &&
       !priceSuggestions.includes(estimatedPrice - 20000)
     ) {
-      setPriceSuggestions((r) => [...r, estimatedPrice - 20000]);
+      if (mounted) {
+        setPriceSuggestions((r) => [...r, estimatedPrice - 20000]);
+      }
     }
     if (
       estimatedPrice - 500 > 0 &&
       !priceSuggestions.includes(estimatedPrice - 500)
     ) {
-      setPriceSuggestions((r) => [...r, estimatedPrice - 500]);
+      if (mounted) {
+        setPriceSuggestions((r) => [...r, estimatedPrice - 500]);
+      }
     }
+    return () => {
+      mounted = false;
+    };
   }, []);
   return (
     <Modal visible={visible} transparent>

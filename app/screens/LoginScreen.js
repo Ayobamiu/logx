@@ -23,7 +23,7 @@ function LoginScreen(props) {
     setLoading(true);
     const result = await authApi.login(email, password);
 
-    if (result.data.error) {
+    if (result.data && result.data.error) {
       setLoading(false);
       return showToast(result.data.message);
     }

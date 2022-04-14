@@ -1,6 +1,6 @@
 /** @format */
 
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -20,10 +20,11 @@ import { Formik } from "formik";
 import * as Yup from "yup";
 import ErrorMessages from "../components/ErrorMessages";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import moment from "moment";
 
 const validationSchema = Yup.object().shape({
   date: Yup.string().required().label("Date"),
-  // time: Yup.string().required().label("Time"),
+  time: Yup.string().required().label("Time"),
   receipentName: Yup.string().required().label("Receipent's Name"),
   receipentNumber: Yup.string().required().label("Receipent's Number"),
   description: Yup.string().required().label("Description"),
@@ -42,13 +43,31 @@ function AddPackageScreen(props) {
       <Formik
         initialValues={{
           date: new Date(),
+          time: new Date(),
         }}
         onSubmit={async (values) => {
+          const d = new Date(values.date);
+          const c = new Date(values.time);
+          var timeString =
+            ("0" + c.getHours()).slice(-2) +
+            ":" +
+            ("0" + c.getMinutes()).slice(-2);
+
+          const dateString =
+            d.getFullYear() +
+            "-" +
+            ("0" + (d.getMonth() + 1)).slice(-2) +
+            "-" +
+            ("0" + d.getDate()).slice(-2);
+
+          var date = moment(dateString + " " + timeString);
+
           // handleLogIn({ ...values });
           let currentPackages = packages;
           currentPackages[currentPackages.length - 1] = {
             ...currentPackages[currentPackages.length - 1],
             ...values,
+            date,
           };
           setPackages(currentPackages);
 
@@ -114,7 +133,7 @@ function AddPackageScreen(props) {
                 //   handleChange("date")(text);
                 // }}
               >
-                Time of Expected delivery
+                Date of Expected delivery
               </AppText>
               <Pressable
                 style={{
@@ -128,7 +147,6 @@ function AddPackageScreen(props) {
                 onPress={() => setShowDate(true)}>
                 <AppText>
                   {values.date && new Date(values.date).toDateString()}{" "}
-                  {values.date && new Date(values.date).toLocaleTimeString()}
                 </AppText>
               </Pressable>
               {showDate && (
@@ -136,7 +154,7 @@ function AddPackageScreen(props) {
                   testID='dateTimePicker'
                   // minimumDate={new Date()}
                   value={new Date(values.date)}
-                  mode='datetime'
+                  mode='date'
                   onChange={(event, selectedDate) => {
                     const currentDate = selectedDate || values.date;
                     setShowDate(Platform.OS === "ios");
@@ -146,8 +164,50 @@ function AddPackageScreen(props) {
                 />
               )}
             </View>
-
             <ErrorMessages error={errors.date} visible={errors.date} />
+            <View style={styles.mb16}>
+              <AppText
+                size='input'
+                fontWeight='medium'
+                style={[{ color: colors.title }, styles.mb8]}
+                defaultValue={new Date()}
+                // onChangeText={(text) => {
+                //   handleChange("date")(text);
+                // }}
+              >
+                Time of Expected delivery
+              </AppText>
+              <Pressable
+                style={{
+                  minHeight: 47,
+                  backgroundColor: colors.inputGray,
+                  width: "100%",
+                  borderRadius: 3,
+                  justifyContent: "center",
+                  paddingHorizontal: 8,
+                }}
+                onPress={() => setShowTime(true)}>
+                <AppText>
+                  {values.time && moment(values.time).format("LT")}
+                </AppText>
+              </Pressable>
+              {showTime && (
+                <DateTimePicker
+                  testID='dateTimePicker'
+                  // minimumDate={new Date()}
+                  value={new Date(values.time)}
+                  mode='time'
+                  onChange={(event, selectedTime) => {
+                    const currentTime = selectedTime || values.time;
+                    setShowTime(Platform.OS === "ios");
+
+                    handleChange("time")(currentTime.toISOString());
+                  }}
+                />
+              )}
+            </View>
+
+            <ErrorMessages error={errors.time} visible={errors.time} />
 
             {/* <View style={styles.mb16} */}
             <AppTextInput
@@ -172,7 +232,7 @@ function AddPackageScreen(props) {
             />
 
             <AppTextInput
-              title='Description'
+              title='Package Description'
               multiline={true}
               textAlignVertical='top'
               numberOfLines={6}

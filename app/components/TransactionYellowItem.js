@@ -1,12 +1,13 @@
 /** @format */
 
-import React from "react";
+import React, { useContext } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import colors from "../config/colors";
 import AppText from "./AppText";
 import { Ionicons } from "@expo/vector-icons";
 import getInitial from "../utility/getInitials";
 import figureAlpha from "../utility/figureAlpha";
+import NotificationContext from "../contexts/notifications";
 
 function TransactionYellowItem({ onPress, item }) {
   let waitingFor = 3;
@@ -19,8 +20,22 @@ function TransactionYellowItem({ onPress, item }) {
   if (item.receipent) {
     waitingFor -= 1;
   }
+
+  const { notifications, setNotifications } = useContext(NotificationContext);
+  const relatedNotifications = notifications.filter(
+    (notification) =>
+      notification.data.request.content.data?.type === "chat:new" &&
+      notification.data.request.content.data.trip === item._id
+  );
   return (
     <Pressable onPress={onPress} style={styles.container}>
+      {relatedNotifications?.length > 0 && (
+        <View style={styles.newChatIndicator}>
+          <AppText style={[styles.white, styles.bold]}>
+            {relatedNotifications?.length}
+          </AppText>
+        </View>
+      )}
       <View style={[styles.row]}>
         <AppText size='medium' style={styles.bold}>
           {item.tripCode}
@@ -113,6 +128,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 15,
+  },
+  newChatIndicator: {
+    position: "absolute",
+    top: -5,
+    borderRadius: 20,
+    backgroundColor: colors.red,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 3,
+    paddingHorizontal: 10,
+    right: 0,
   },
   white: {
     color: colors.white,

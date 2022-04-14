@@ -81,7 +81,7 @@ function SignUpScreenTwo(props) {
               textContentType='givenName'
               autoCompleteType='name'
             />
-            <AppText style={[{ color: colors.danger }, styles.mb32]}>
+            <AppText style={[{ color: colors.danger }, styles.mb16]}>
               {errors.firstName}
             </AppText>
             <AppTextInput
@@ -91,7 +91,7 @@ function SignUpScreenTwo(props) {
               textContentType='name'
               autoCompleteType='name'
             />
-            <AppText style={[{ color: colors.danger }, styles.mb32]}>
+            <AppText style={[{ color: colors.danger }, styles.mb16]}>
               {errors.lastName}
             </AppText>
             <AppTextInput
@@ -103,7 +103,7 @@ function SignUpScreenTwo(props) {
               autoCompleteType='password'
               autoCapitalize='none'
             />
-            <AppText style={[{ color: colors.danger }, styles.mb32]}>
+            <AppText style={[{ color: colors.danger }, styles.mb16]}>
               {errors.password}
             </AppText>
             <AppButton

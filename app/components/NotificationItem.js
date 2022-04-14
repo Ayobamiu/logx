@@ -14,10 +14,12 @@ function NotificationItem({ header, subHeader, text, onPress }) {
             { flexDirection: "row", justifyContent: "space-between" },
             styles.mb10,
           ]}>
-          <AppText numberOfLines={1} style={[styles.bold]}>
+          <AppText numberOfLines={1} style={[styles.bold, { flex: 0.8 }]}>
             {header}
           </AppText>
-          <AppText numberOfLines={1} style={[styles.light]}>
+          <AppText
+            numberOfLines={1}
+            style={[styles.light, { flex: 0.2, textAlign: "right" }]}>
             {subHeader}
           </AppText>
         </View>

@@ -13,6 +13,7 @@ import colors from "../config/colors";
 import AppText from "./AppText";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import AppButton from "./AppButton";
+import AppUserAvatar from "./AppUserAvatar";
 
 function BidResponseItem({
   onReject = () => {},
@@ -29,19 +30,18 @@ function BidResponseItem({
     <View style={[styles.container, { width: width - 48 }]}>
       <View style={styles.textSection}>
         <Pressable onPress={onPressProfile}>
-          <ImageBackground
-            source={{ uri: bidItem?.driver?.profilePhoto }}
-            style={styles.avatar}
-            resizeMode='cover'
-            style={styles.avatar}
-            borderRadius={32 / 2}>
-            {!bidItem?.driver?.profilePhoto && (
-              <AntDesign name='user' size={24} color={colors.black} />
-            )}
-          </ImageBackground>
+          <AppUserAvatar
+            size='small'
+            profilePhoto={bidItem?.driver?.profilePhoto}
+            color={colors.black}
+            backgroundColor={colors.greyBg}
+            onPress={onPressProfile}
+          />
         </Pressable>
         <View style={styles.mr10}>
-          <AppText style={[styles.unselectedText]}>Ratings</AppText>
+          <AppText style={[styles.unselectedText]}>
+            {bidItem?.driver?.firstName} {bidItem?.driver?.lastName}
+          </AppText>
           <View style={[styles.row]}>
             <Ionicons name='star' color={colors.primary} size={15} />
             <Ionicons name='star' color={colors.primary} size={15} />

@@ -12,7 +12,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
-  ImageBackground,
+  StatusBar,
+  Platform,
 } from "react-native";
 import AppText from "../components/AppText";
 import colors from "../config/colors";
@@ -23,21 +24,30 @@ import TransactionItem from "../components/TransactionItem";
 import QuickActonItem from "../components/QuickActionItem";
 import AppButton from "../components/AppButton";
 import TripsContext from "../contexts/trips";
+import authApi from "../api/auth";
 import placesApi from "../api/places";
 import TripContext from "../contexts/trip";
 import SelectJorneyTypeAnyWhere from "../components/SelectJorneyTypeAnyWhere";
 import PayWithFlutterWave from "../components/PayWithFlutterWave";
 import useAuth from "../auth/useAuth";
 import ModeContext from "../contexts/mode";
+import AppUserAvatar from "../components/AppUserAvatar";
+import showToast from "../config/showToast";
+import socket from "../api/socket";
+import NotificationContext from "../contexts/notifications";
 
 function HomeScreen(props) {
-  const { user } = useContext(AuthContext);
+  let mounted = true;
+  const { user, setUser } = useContext(AuthContext);
   const { trip, setTrip } = useContext(TripContext);
   const { trips, setTrips } = useContext(TripsContext);
+  const { notifications } = useContext(NotificationContext);
+  const unreadNotifications = notifications.filter((i) => !i.seen);
+
   const ongoingTrips = trips.filter(
     (i) => i.status === "pending" || i.status === "inTransit"
   );
-  const { changeUserMode } = useAuth();
+  const { changeUserMode, saveUser } = useAuth();
   const { mode, setMode } = useContext(ModeContext);
 
   const width = Dimensions.get("window").width;
@@ -45,34 +55,71 @@ function HomeScreen(props) {
   const [expandWhiteSection, setExpandWhiteSection] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showCancelPrompt, setShowCancelPrompt] = useState(false);
-  const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [loadingtrips, setLoadingtrips] = useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [openPayment, setOpenPayment] = useState(false);
   const [openJourneyTypePanel, setOpenJourneyTypePanel] = useState(false);
 
   const loadTrips = async () => {
-    setLoadingtrips(true);
+    if (mounted) {
+      setLoadingtrips(true);
+    }
 
     const { data, error } = await placesApi.getMyTrip();
     if (!error && data) {
-      setTrips(data);
+      if (mounted) {
+        setTrips(data);
+      }
     }
-    setLoadingtrips(false);
+    if (mounted) {
+      setLoadingtrips(false);
+    }
+  };
+  const handleUpdateProfile = async (data) => {
+    const result = await authApi.updateProfile(data);
+
+    if (result.data && result.data.error) {
+      return showToast("Profile not up to date, Reload");
+    }
+    if (result.error) {
+      return showToast("Profile not up to date, Reload");
+    }
+    setUser(result.data);
+    await saveUser(result.data);
   };
   useEffect(() => {
     loadTrips();
+    handleUpdateProfile({});
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
+    if (mounted) {
+      setRefreshing(true);
+    }
     (async () => {
       await loadTrips();
-      setRefreshing(false);
+      handleUpdateProfile({});
+      if (mounted) {
+        setRefreshing(false);
+      }
     })();
   }, []);
+  // socket.on("trip:updated:users", (data) => {
+  //   if (data.receivers) {
+  //     if (data.receivers.includes(user._id)) {
+  //       if (mounted) {
+  //         loadTrips();
+  //       }
+  //     }
+  //   }
+  // });
   return (
     <View style={styles.container}>
+      <StatusBar animated={true} hidden={true} />
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -84,19 +131,13 @@ function HomeScreen(props) {
                 props.navigation.openDrawer();
               }}
               style={styles.userDetailsTwo}>
-              <ImageBackground
-                source={{ uri: user.profilePhoto }}
-                style={{
-                  width: 32,
-                  height: 32,
-                  justifyContent: "center",
-                  alignItems: "center",
+              <AppUserAvatar
+                profilePhoto={user.profilePhoto}
+                size='small'
+                onPress={() => {
+                  props.navigation.openDrawer();
                 }}
-                borderRadius={32 / 2}>
-                {!user.profilePhoto && (
-                  <Feather name='user' size={30} color={colors.white} />
-                )}
-              </ImageBackground>
+              />
               {!expandWhiteSection && (
                 <AppText style={{ color: colors.white, marginLeft: 10 }}>
                   Hi, {user.firstName}{" "}
@@ -114,39 +155,56 @@ function HomeScreen(props) {
                 Log-X
               </AppText>
             )}
-            <Feather
-              name='bell'
-              size={30}
-              color={colors.white}
-              onPress={() => {
-                props.navigation.navigate("NotificationsScreen");
-              }}
-            />
+            <View style={{ position: "relative" }}>
+              {unreadNotifications.length > 0 && (
+                <View
+                  style={{
+                    backgroundColor: colors.customBlue,
+                    width: 10,
+                    height: 10,
+                    position: "absolute",
+                    borderRadius: 10 / 2,
+                    left: 2,
+                    zIndex: 2,
+                  }}
+                />
+              )}
+              <Feather
+                name='bell'
+                size={30}
+                color={colors.white}
+                onPress={() => {
+                  props.navigation.navigate("NotificationsScreen");
+                }}
+              />
+            </View>
           </View>
           <View
-            style={{
-              paddingHorizontal: width * 0.1,
-              justifyContent: "center",
-              height: 150,
-            }}>
+            style={[
+              {
+                paddingHorizontal: 32,
+                minHeight: 150,
+              },
+              styles.mv10,
+            ]}>
             <AppText
               size='16'
               style={{
                 color: colors.primary,
-                textAlign: "center",
                 lineHeight: 21,
               }}>
-              Welcome {user.firstName}, its a good day to send your packages to
-              your respective destinations.
+              Welcome {user.firstName}.
             </AppText>
             <AppText
               size='16'
               style={{
-                color: colors.lightPrimary,
-                textAlign: "center",
+                color: colors.primary,
                 lineHeight: 21,
-                marginVertical: 10,
-              }}
+              }}>
+              Experience the most seamless delivery process. Connect with
+              freelance delivery personnels near you.
+            </AppText>
+            <TouchableOpacity
               onPress={() => {
                 if (mode === "driver") {
                   changeUserMode("sender");
@@ -154,9 +212,11 @@ function HomeScreen(props) {
                   changeUserMode("driver");
                 }
                 props.navigation.closeDrawer();
-              }}>
-              Want to deliver for people? Let’s Roll
-            </AppText>
+              }}
+              style={styles.startDeliverying}>
+              <AppText>Start delivering</AppText>
+              <Ionicons name='arrow-forward' size={20} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -173,10 +233,7 @@ function HomeScreen(props) {
               }}
               style={styles.yellowBox}>
               <AppText size='header'>
-                &#8358;{user.availableBalance}
-                <AppText size='x-small' style={{ color: colors.white }}>
-                  NGN
-                </AppText>
+                &#8358;{Math.round(user.availableBalance)}
               </AppText>
 
               <TouchableOpacity
@@ -406,11 +463,24 @@ const styles = StyleSheet.create({
   mv10: { marginVertical: 10 },
   primary: { color: colors.primary },
   row: { flexDirection: "row", alignItems: "center" },
+  startDeliverying: {
+    padding: 10,
+    backgroundColor: "#E7E7F0",
+    alignSelf: "flex-start",
+    borderRadius: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    marginTop: 20,
+  },
   userDetails: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 32,
+    marginTop: 5,
   },
   userDetailsTwo: {
     flexDirection: "row",

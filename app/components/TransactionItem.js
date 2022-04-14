@@ -1,31 +1,41 @@
 /** @format */
 
-import React from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import React, { useContext } from "react";
+import { View, StyleSheet, Pressable, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import colors from "../config/colors";
 import AppText from "./AppText";
 import getInitial from "../utility/getInitials";
 import figureAlpha from "../utility/figureAlpha";
+import NotificationContext from "../contexts/notifications";
 
 function TransactionItem({ onPress, item }) {
-  let waitingFor = 3;
-  if (item.sender) {
-    waitingFor -= 1;
+  let waitingFor = 0;
+  if (!item.sender) {
+    waitingFor += 1;
   }
-  if (item.driver) {
-    waitingFor -= 1;
+  if (!item.driver) {
+    waitingFor += 1;
   }
-  if (item.receipent) {
-    waitingFor -= 1;
-  }
-
+  const { notifications, setNotifications } = useContext(NotificationContext);
+  const relatedNotifications = notifications.filter(
+    (notification) =>
+      notification.data.request.content.data?.type === "chat:new" &&
+      notification.data.request.content.data.trip === item._id
+  );
   return (
-    <Pressable
+    <TouchableOpacity
       style={[styles.container, styles.border, { padding: 16 }]}
       onPress={onPress}>
-      <View style={styles.container}>
+      {relatedNotifications?.length > 0 && (
+        <View style={styles.newChatIndicator}>
+          <AppText style={[styles.white, styles.bold]}>
+            {relatedNotifications?.length}
+          </AppText>
+        </View>
+      )}
+      <View style={[styles.container, { flex: 0.3, overflow: "scroll" }]}>
         <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
           <AppText style={{ color: colors.white, textTransform: "uppercase" }}>
             {getInitial(item?.sender?.firstName, item?.sender?.lastName)}
@@ -55,11 +65,23 @@ function TransactionItem({ onPress, item }) {
           </View>
         ))}
       </View>
-      <AppText>Waiting for {figureAlpha[waitingFor]} people to...</AppText>
-      <View style={[styles.avatar, { backgroundColor: colors.opaquePrimary }]}>
-        <Ionicons name='arrow-forward' size={20} color={colors.darkyellow} />
+      <View style={[{ flex: 0.6 }]}>
+        {waitingFor > 0 ? (
+          <AppText numberOfLines={1}>
+            Waiting for {figureAlpha[waitingFor]}{" "}
+            {waitingFor > 1 ? "people" : "person"} to connect
+          </AppText>
+        ) : (
+          <AppText numberOfLines={1}>Users connected for trip</AppText>
+        )}
       </View>
-    </Pressable>
+      <View style={[{ flex: 0.1 }]}>
+        <View
+          style={[styles.avatar, { backgroundColor: colors.opaquePrimary }]}>
+          <Ionicons name='arrow-forward' size={20} color={colors.darkyellow} />
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 }
 const styles = StyleSheet.create({
@@ -72,12 +94,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  bold: { fontWeight: "bold" },
+
   border: { borderColor: colors.grey, borderWidth: 1 },
   container: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    // justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
   },
+  newChatIndicator: {
+    position: "absolute",
+    top: -10,
+    borderRadius: 20,
+    backgroundColor: colors.red,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 3,
+    paddingHorizontal: 10,
+  },
+  white: { color: colors.white },
 });
 export default TransactionItem;

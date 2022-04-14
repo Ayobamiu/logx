@@ -1,19 +1,23 @@
 /** @format */
 
 import React, { useContext, useState } from "react";
-import { View, StyleSheet, Pressable, ScrollView } from "react-native";
-import { Fontisto, Ionicons } from "@expo/vector-icons";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  ImageBackground,
+  TouchableOpacity,
+} from "react-native";
+import { Fontisto, Ionicons, Feather } from "@expo/vector-icons";
 import AppText from "../components/AppText";
 import colors from "../config/colors";
 import AuthContext from "../contexts/auth";
+import AppUserAvatar from "../components/AppUserAvatar";
 
 function DriverSettingsScreen(props) {
   const { user } = useContext(AuthContext);
-  React.useLayoutEffect(() => {
-    props.navigation.setOptions({
-      title: <AppText size='header'>Welcome, {user.firstName}</AppText>,
-    });
-  });
+
   const VerificationItem = ({ onPress, title, subTitle, uploaded = false }) => {
     return (
       <Pressable
@@ -71,7 +75,26 @@ function DriverSettingsScreen(props) {
 
   return (
     <ScrollView style={styles.container}>
-      <AppText size='16' style={[styles.mh10, { color: colors.light }]}>
+      <TouchableOpacity
+        onPress={() => {
+          props.navigation.openDrawer();
+        }}
+        style={[styles.row, { marginVertical: 10 }]}>
+        <AppUserAvatar
+          size='small'
+          color={colors.black}
+          profilePhoto={user.profilePhoto}
+          backgroundColor={colors.greyBg}
+          onPress={() => {
+            props.navigation.openDrawer();
+          }}
+        />
+
+        <AppText size='header' style={styles.mh10}>
+          Welcome, {user.firstName}
+        </AppText>
+      </TouchableOpacity>
+      <AppText size='16' style={[{ color: colors.light }]}>
         Here’s what you need to do to set up your your delivery personel’s
         account
       </AppText>
@@ -132,7 +155,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   bold: { fontWeight: "bold" },
-  container: { padding: 16, backgroundColor: colors.white },
+  container: { padding: 16, backgroundColor: colors.white, paddingTop: 40 },
   mh10: { marginHorizontal: 10 },
   row: {
     alignItems: "center",

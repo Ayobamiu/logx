@@ -24,6 +24,9 @@ import secondsToHms from "../utility/secondsToHms";
 import PreviewPackageDetails from "./PreviewPackageDetails";
 import socket from "../api/socket";
 import AuthContext from "../contexts/auth";
+import AppUserAvatar from "./AppUserAvatar";
+import { notifyMeIAcceptedATrip } from "../hooks/useNotification";
+import appNavigation from "../routes/rootNavigation";
 
 function DriverRequestPreview({ requestItem }) {
   const [showBidModal, setShowBidModal] = useState(false);
@@ -48,8 +51,13 @@ function DriverRequestPreview({ requestItem }) {
       }
     }
     if (!error && data) {
-      showToast("Trip accepted successfully!");
+      // showToast("Trip accepted successfully!");
+      socket.emit("trip:updated", { tripId });
+      notifyMeIAcceptedATrip(requestItem);
       setShowModal(false);
+      appNavigation.navigate("TransactionDetailsScreen", {
+        item: requestItem,
+      });
     }
   };
 
@@ -82,21 +90,18 @@ function DriverRequestPreview({ requestItem }) {
     }, 2000);
   };
 
-  // if (requestItem?.status !== "pending") return null;
   return (
     <Pressable
       style={[styles.driverItem, styles.mv8]}
       onPress={() => setShowModal(true)}>
       <View style={styles.driverGrey}>
         <View style={[styles.row]}>
-          <ImageBackground
-            source={{ uri: requestItem?.sender?.profilePhoto }}
-            style={styles.avatar}
-            borderRadius={32 / 2}>
-            {!requestItem?.sender?.profilePhoto && (
-              <AntDesign name='user' size={24} color={colors.black} />
-            )}
-          </ImageBackground>
+          <AppUserAvatar
+            size='small'
+            color={colors.black}
+            backgroundColor={colors.greyBg}
+            profilePhoto={requestItem?.sender?.profilePhoto}
+          />
           <View style={styles.ml10}>
             <AppText size='16' style={styles.bold}>
               {requestItem?.sender?.firstName} {requestItem?.sender?.lastName}
@@ -310,15 +315,29 @@ function DriverRequestPreview({ requestItem }) {
                   paddingHorizontal: 32,
                 },
               ]}>
-              <AppButton
-                title='Bid'
-                style={{ borderColor: colors.black, borderWidth: 1 }}
-                secondary
-                onPress={() => {
-                  setShowModal(false);
-                  setShowBidModal(true);
-                }}
-              />
+              {(!requestItem?.journeyType ||
+                requestItem?.journeyType === "intra-state") && (
+                <AppButton
+                  title='Decline'
+                  style={{ borderColor: colors.black, borderWidth: 1 }}
+                  secondary
+                  onPress={() => {
+                    setShowModal(false);
+                  }}
+                />
+              )}
+
+              {requestItem?.journeyType === "inter-state" && (
+                <AppButton
+                  title='Bid'
+                  style={{ borderColor: colors.black, borderWidth: 1 }}
+                  secondary
+                  onPress={() => {
+                    setShowModal(false);
+                    setShowBidModal(true);
+                  }}
+                />
+              )}
               <AppButton
                 title={
                   acceptingTrip ? (

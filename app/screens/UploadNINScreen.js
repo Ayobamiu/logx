@@ -152,7 +152,7 @@ function UploadNINScreen(props) {
               color={colors.white}
             />
           </TouchableOpacity> */}
-          {!image ? (
+          {!image || image === "" ? (
             <Camera
               style={styles.camera}
               type={type}
@@ -207,12 +207,24 @@ function UploadNINScreen(props) {
                 //   setStatus("success");
                 // }}
                 onPress={() => {
+                  let localUri = image.uri;
+                  let filename = localUri.split("/").pop();
+
+                  let match = /\.(\w+)$/.exec(filename);
+                  let type = match ? `image/${match[1]}` : `image`;
                   const formData = new FormData();
                   formData.append("ninSlip", {
-                    ...image,
-                    name: `image${Math.random() * 10000}.jpg`,
+                    uri: localUri,
+                    name: filename,
+                    type,
                   });
                   handleUpdateProfileMedia(formData);
+                  // const formData = new FormData();
+                  // formData.append("ninSlip", {
+                  //   ...image,
+                  //   name: `image${Math.random() * 10000}.jpg`,
+                  // });
+                  // handleUpdateProfileMedia(formData);
                 }}>
                 {loading ? (
                   <ActivityIndicator

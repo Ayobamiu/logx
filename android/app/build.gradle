@@ -135,8 +135,8 @@ android {
         applicationId "com.logx"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 3
+        versionName "3.0"
     }
     splits {
         abi {
@@ -198,7 +198,7 @@ dependencies {
     debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}") {
         exclude group:'com.facebook.flipper'
     }
-    addUnimodulesDependencies()
+    addUnimodulesDependencies([exclude: ['expo-permissions']])
 
     if (enableHermes) {
         def hermesPath = "../../node_modules/hermes-engine/android/";

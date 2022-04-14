@@ -1,3 +1,5 @@
+/** @format */
+
 import React from "react";
 import { Text } from "react-native";
 
@@ -20,6 +22,8 @@ function AppText({
       ? 16
       : size === "x-small"
       ? 12
+      : size === "xx-small"
+      ? 8
       : 14;
 
   const style = {

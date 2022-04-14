@@ -7,7 +7,6 @@
     "icon": "./app/assets/icon.png",
     "splash": {
       "image": "./app/assets/splash.png",
-      "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
     "plugins": [
@@ -25,7 +24,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.logx.logxapp",
+      "buildNumber": "1.0.0",
       "infoPlist": {
         "UIBackgroundModes": ["location", "fetch"],
         "NSLocationAlwaysUsageDescription": "Tracking driver's location.",
@@ -34,11 +33,12 @@
       }
     },
     "android": {
+      "package": "com.logx.logxapp",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.logx.logxapp",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",

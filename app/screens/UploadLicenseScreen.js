@@ -104,17 +104,29 @@ function UploadLicenseScreen(props) {
           </AppText>
         </View>
 
-        <ImageBackground
-          style={[styles.avatar, { marginTop: 50 }]}
-          source={image}>
-          {!image && (
-            <Ionicons
-              name='md-document-text-outline'
-              size={(229 * 2) / 3}
-              color={colors.white}
-            />
-          )}
-        </ImageBackground>
+        {!image || image === "" ? (
+          <View style={[styles.avatar, { marginTop: 50 }]}>
+            {!image && (
+              <Ionicons
+                name='md-document-text-outline'
+                size={(229 * 2) / 3}
+                color={colors.white}
+              />
+            )}
+          </View>
+        ) : (
+          <ImageBackground
+            style={[styles.avatar, { marginTop: 50 }]}
+            source={image}>
+            {!image && (
+              <Ionicons
+                name='md-document-text-outline'
+                size={(229 * 2) / 3}
+                color={colors.white}
+              />
+            )}
+          </ImageBackground>
+        )}
       </ScrollView>
       <View style={[{ width: "100%" }, styles.floatActionButton]}>
         {!image ? (
@@ -165,7 +177,7 @@ function UploadLicenseScreen(props) {
               color={colors.white}
             />
           </TouchableOpacity> */}
-          {!image ? (
+          {!image || image === "" ? (
             <Camera
               style={styles.camera}
               type={type}
@@ -220,12 +232,24 @@ function UploadLicenseScreen(props) {
                 //   setStatus("success");
                 // }}
                 onPress={() => {
+                  let localUri = image.uri;
+                  let filename = localUri.split("/").pop();
+
+                  let match = /\.(\w+)$/.exec(filename);
+                  let type = match ? `image/${match[1]}` : `image`;
                   const formData = new FormData();
                   formData.append("driversLicense", {
-                    ...image,
-                    name: `image${Math.random() * 10000}.jpg`,
+                    uri: localUri,
+                    name: filename,
+                    type,
                   });
                   handleUpdateProfileMedia(formData);
+                  // const formData = new FormData();
+                  // formData.append("driversLicense", {
+                  //   ...image,
+                  //   name: `image${Math.random() * 10000}.jpg`,
+                  // });
+                  // handleUpdateProfileMedia(formData);
                 }}>
                 {loading ? (
                   <ActivityIndicator

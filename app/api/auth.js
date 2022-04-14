@@ -29,6 +29,28 @@ const getUserProfile = async (userId) => {
   }
   return { error: err, data };
 };
+const logOut = async () => {
+  const token = await storage.getToken();
+  let data = {};
+  let err = false;
+  try {
+    const result = await apiClient.post(
+      "/auth/log-out",
+      {},
+      {
+        headers: {
+          Authorization: token,
+        },
+      }
+    );
+    data = result?.data?.error ? [] : result.data;
+  } catch (error) {
+    if (error !== "") {
+      err = true;
+    }
+  }
+  return { error: err, data };
+};
 const changePassword = async (formData) => {
   const token = await storage.getToken();
   let data = {};
@@ -67,15 +89,19 @@ const updateProfile = async (formData) => {
 };
 const updateProfileMedia = async (formData) => {
   const token = await storage.getToken();
-
   let data = {};
   let err = false;
   try {
-    const result = await apiClient.patch("/auth/update-media", formData, {
-      headers: {
-        Authorization: token,
-      },
-    });
+    const result = await apiClientNotCached.post(
+      "/auth/update-media",
+      formData,
+      {
+        headers: {
+          Authorization: token,
+          "content-type": "multipart/form-data",
+        },
+      }
+    );
     data = result?.data?.error ? [] : result.data;
   } catch (error) {
     if (error !== "") {
@@ -96,4 +122,5 @@ export default {
   passordResetCode,
   changePassword,
   getUserProfile,
+  logOut,
 };

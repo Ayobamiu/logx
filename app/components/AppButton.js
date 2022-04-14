@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
     color: colors.secondary,
     fontSize: 14,
     fontWeight: "bold",
+    textAlign: "center",
   },
   small: {
     padding: 8,

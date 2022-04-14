@@ -1,9 +1,13 @@
-show real-time position of driver 
-select 'inter state' or 'intra-state' journey.
+remove  "resizeMode": "contain" in app.json
+add sentry-expo
+use registerRootComponent(App);
 
 
 
-onLocationChange:
-    evry user emits driver:location:update with {location, userId}
-    on driver:location:update; 
-        server gets all trips associated to the user and send the location to all the trip rooms
+
+Organization Name: logx
+Project name: react-native
+DSN: https://558ffcde3c4d4551991054ebdc2ce63d@o1203296.ingest.sentry.io/6329080
+auth token: be6e2cdec504483891c8c6b839fc92179b4c8574f65d422794867295310ad7a7
+Team: #logx
+

@@ -2,7 +2,7 @@
 
 import React, { useContext } from "react";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-import { ImageBackground, Pressable, View, ScrollView } from "react-native";
+import { Pressable, View, ScrollView, ActivityIndicator } from "react-native";
 import {
   Ionicons,
   Feather,
@@ -15,16 +15,27 @@ import colors from "../config/colors";
 import AuthContext from "../contexts/auth";
 import useAuth from "../auth/useAuth";
 import ModeContext from "../contexts/mode";
+import AppUserAvatar from "../components/AppUserAvatar";
 
 function CustomDrawerContent(props) {
   const { user } = useContext(AuthContext);
   const { mode, setMode } = useContext(ModeContext);
-  const { logOut, changeUserMode } = useAuth();
+  const { logOut, changeUserMode, loggingOut } = useAuth();
+
+  const aboutMeVerified =
+    user.firstName && user.lastName && user.phoneNumber && user.deliveryType;
+
+  const idVerified =
+    user.driversLicenseVerificationStatus === "success" ||
+    user.ninSlipVerificationStatus === "success" ||
+    user.internationalPassportVerificationStatus === "success" ||
+    user.nationalIdVerificationStatus === "success" ||
+    user.votersCardVerificationStatus === "success";
   let verified = 0;
-  if (user.verificationPhoto) {
+  if (aboutMeVerified) {
     verified += 1;
   }
-  if (user.nationalId || user.votersCard || user.internationalPassport) {
+  if (idVerified) {
     verified += 1;
   }
   return (
@@ -43,21 +54,13 @@ function CustomDrawerContent(props) {
               flexDirection: "row",
             }}
             onPress={() => props.navigation.navigate("Account")}>
-            <ImageBackground
-              source={{ uri: user.profilePhoto }}
-              style={{
-                width: 55,
-                height: 55,
-                backgroundColor: colors.grey,
-                borderRadius: 55 / 2,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              borderRadius={55 / 2}>
-              {!user.profilePhoto && (
-                <Feather color={colors.black} size={40} name='user' />
-              )}
-            </ImageBackground>
+            <AppUserAvatar
+              backgroundColor={colors.grey}
+              color={colors.black}
+              profilePhoto={user.profilePhoto}
+              onPress={() => props.navigation.navigate("Account")}
+            />
+
             <View style={{ marginHorizontal: 10 }}>
               <AppText style={{ color: colors.black, fontWeight: "bold" }}>
                 {user.firstName}
@@ -186,7 +189,16 @@ function CustomDrawerContent(props) {
             label='Sign Out'
             onPress={async () => await logOut()}
             icon={({ focused, color, size }) => (
-              <FontAwesome name='sign-out' color={color} size={size} />
+              <View>
+                {loggingOut ? (
+                  <ActivityIndicator
+                    color={colors.primary}
+                    animating={loggingOut}
+                  />
+                ) : (
+                  <FontAwesome name='sign-out' color={color} size={size} />
+                )}
+              </View>
             )}
           />
         </View>

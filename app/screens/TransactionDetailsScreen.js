@@ -11,9 +11,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
-  ImageBackground,
   Modal,
-  TouchableOpacity,
 } from "react-native";
 import AppText from "../components/AppText";
 import {
@@ -25,14 +23,12 @@ import {
 import colors from "../config/colors";
 import UserStatusComponent from "../components/UserStatusComponent";
 import SectionHeader from "../components/SectionHeader";
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import useLocation from "../hooks/useLocation";
 import AppButton from "../components/AppButton";
 import AppTextInput from "../components/AppTextInput";
 import BidResponseItem from "../components/BidResponseItem";
 import CountDown from "react-native-countdown-component";
 import timeRemaining from "../utility/timeRemaining";
-import MapLabel from "../components/MapLabel";
 import placesApi from "../api/places";
 
 import AuthContext from "../contexts/auth";
@@ -43,18 +39,18 @@ import socket from "../api/socket";
 import TripItem from "../components/TripItem";
 import AddReview from "../components/AddReview";
 import timeSince from "../utility/timeSince";
-import MapViewDirections from "react-native-maps-directions";
 import MapComponent from "../components/MapComponent";
+import { getDistanceFromLatLonInKm } from "../utility/latLong";
+import NotificationContext from "../contexts/notifications";
+import ResetButton from "../components/ResetButton";
 
 function TransactionDetailsScreen(props) {
+  let mounted = true;
   const { user } = useContext(AuthContext);
-  const {
-    saveAndSendTripCode,
-    sendingTripCode,
-    saveAndSendEndTripCode,
-  } = useAuth();
+  const { notifications, setNotifications } = useContext(NotificationContext);
 
-  const [loadingTripBids, setLoadingTripBids] = useState(false);
+  const { saveAndSendTripCode, sendingTripCode, saveAndSendEndTripCode } =
+    useAuth();
   const [endTripCode, setEndTripCode] = useState("");
   const [bids, setBids] = useState([]);
   const [code, setCode] = useState("");
@@ -66,44 +62,87 @@ function TransactionDetailsScreen(props) {
   });
 
   const { item } = props.route.params;
+  const relatedNotifications = notifications.filter(
+    (notification) =>
+      notification.data.request.content.data?.type === "chat:new" &&
+      notification.data.request.content.data.trip === item._id
+  );
+
   const [trip, setTrip] = useState(item);
+  var t1 = new Date(trip?.eta);
+  var t2 = new Date();
+  var dif = t1.getTime() - t2.getTime();
+
+  var Seconds_from_T1_to_T2 = dif / 1000;
+  var Seconds_Between_Dates = Math.round(Seconds_from_T1_to_T2);
+  let timeRemainingToETA =
+    Seconds_Between_Dates > 0 ? Seconds_Between_Dates : 0;
 
   const acceptedBid = bids.find((bid) => bid.status === "accepted");
 
   const loadTriBids = async () => {
-    setLoadingTripBids(true);
-
-    const { data, error } = await placesApi.getTripBids(trip._id);
+    const { data, error } = await placesApi.getTripBids(trip?._id);
     if (!error && data) {
-      setBids(data);
+      if (mounted) {
+        setBids(data);
+      }
     }
-    setLoadingTripBids(false);
+  };
+  const joinTrip = async () => {
+    const { data, error } = await placesApi.joinTrip(trip?._id);
+    if (!error && data) {
+      if (mounted) {
+        setTrip(data);
+      }
+    }
+  };
+  const getDriverLocation = async () => {
+    const { data, error } = await placesApi.getDriverLocation(trip?._id);
+    if (!error && data) {
+      if (data?.location?.latitude && data?.location?.longitude) {
+        if (mounted) {
+          setDriverLocation({
+            latitude: data?.location?.latitude,
+            longitude: data?.location?.longitude,
+            latitudeDelta,
+            longitudeDelta,
+          });
+        }
+      }
+    }
   };
   const loadTrip = async () => {
-    setLoadingTripBids(true);
-
-    const { data, error } = await placesApi.getSingleTrip(trip._id);
+    const { data, error } = await placesApi.getSingleTrip(trip?._id);
     if (!error && data) {
-      setTrip(data);
+      if (mounted) {
+        setTrip(data);
+      }
     }
-    setLoadingTripBids(false);
   };
 
   const acceptRejectBid = async (id, status) => {
-    setProcessingBid({
-      id,
-      loading: true,
-      action: status,
-    });
+    if (mounted) {
+      setProcessingBid({
+        id,
+        loading: true,
+        action: status,
+      });
+    }
 
     const { data, error } = await placesApi.acceptRejectTrip(id, { status });
-    setProcessingBid({
-      id: "",
-      loading: false,
-      action: "",
-    });
+    if (mounted) {
+      setProcessingBid({
+        id: "",
+        loading: false,
+        action: "",
+      });
+    }
     if (!error && data) {
-      setTrip(data);
+      socket.emit("trip:updated", { tripId: trip?._id });
+      if (mounted) {
+        setTrip(data);
+      }
+
       loadTriBids();
     }
   };
@@ -111,9 +150,12 @@ function TransactionDetailsScreen(props) {
     const { data, error } = await placesApi.changeTripStatus(id, { status });
 
     if (!error && data) {
-      setTrip(data);
-      loadTriBids();
-      setStartJorney(false);
+      socket.emit("trip:updated", { tripId: trip?._id });
+      if (mounted) {
+        setTrip(data);
+        loadTriBids();
+        setStartJorney(false);
+      }
     }
   };
   const changeTripPackageStatus = async (tripId, packageId, status) => {
@@ -124,69 +166,127 @@ function TransactionDetailsScreen(props) {
     );
 
     if (!error && data) {
-      setTrip(data);
-      loadTriBids();
-      setStartJorney(false);
+      socket.emit("trip:updated", { tripId: trip?._id });
+      if (mounted) {
+        setTrip(data);
+        loadTriBids();
+        setStartJorney(false);
+      }
     }
   };
-  const updateTrip = async (id, formData) => {
-    setUpdatingTime(true);
+  const updateTripETA = async (id, formData) => {
+    if (mounted) {
+      setUpdatingTime(true);
+    }
     const { data, error } = await placesApi.updateTrip(id, formData);
-    setUpdatingTime(false);
+    if (mounted) {
+      setUpdatingTime(false);
+    }
     if (error) {
       showToast("Error Increasing Expected Time of Arrival. Try Again!");
     }
     if (!error && data) {
+      socket.emit("trip:updated", { tripId: trip?._id });
       showToast("Expected Time of Arrival Increased!");
-      setTrip(data);
+      if (mounted) {
+        setTrip(data);
+      }
+    }
+  };
+  const requestForRefund = async (id, formData) => {
+    if (mounted) {
+      setRequestingRefund(true);
+    }
+    const { data, error } = await placesApi.updateTrip(id, formData);
+    if (mounted) {
+      setRequestingRefund(false);
+    }
+    if (error) {
+      showToast("Error submitting refund request");
+    }
+    if (!error && data) {
+      socket.emit("trip:updated", { tripId: trip?._id });
+      showToast("Refund request submitted");
+      if (mounted) {
+        setTrip(data);
+      }
     }
   };
   useEffect(() => {
+    getDriverLocation();
     loadTriBids();
-    socket.emit("request:to:join", trip._id);
+    loadTrip();
+    socket.emit("request:to:join", trip?._id);
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  useEffect(() => {
+    for (let index = 0; index < trip?.packages.length; index++) {
+      const receiver = trip?.packages[index];
+      if (receiver.receipentNumber === user?.phoneNumber) {
+        if (!trip?.receipentsThatJoined.includes(receiver.receipentNumber)) {
+          joinTrip();
+        }
+      }
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [trip?.receipentsThatJoined]);
   socket.on("trip:bid:created", () => {
     loadTriBids();
   });
+  socket.on("trip:updated", () => {
+    loadTrip();
+  });
 
   const { getLocation, location } = useLocation();
+  const { width, height } = Dimensions.get("window");
+  const ASPECT_RATIO = width / height;
+
+  const latitudeDelta = 0;
+  const longitudeDelta = 0;
+
   const [region, setRegion] = useState({
-    latitude: 8.9233587,
-    longitude: -0.3674603,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+    latitude: location?.coords?.latitude || 9.0173869,
+    longitude: location?.coords?.longitude || 4.17981023,
+    latitudeDelta,
+    longitudeDelta,
   });
 
-  const [driverLocation, setDriverLocation] = useState({
-    latitude: location?.coords?.latitude || 8.9233587,
-    longitude: location?.coords?.latitude || -0.3674603,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
-  });
+  const [driverLocation, setDriverLocation] = useState();
 
   useEffect(() => {
     (async () => {
       const data = await getLocation();
-      setRegion({
-        latitude: data?.coords?.latitude,
-        longitude: data?.coords?.longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      });
+      if (mounted) {
+        setRegion({
+          latitude: data?.coords?.latitude,
+          longitude: data?.coords?.longitude,
+          latitudeDelta,
+          longitudeDelta,
+        });
+      }
     })();
+    return () => {
+      mounted = false;
+    };
   }, []);
   const [startJorney, setStartJorney] = useState(false);
   const [acceptBid, setAcceptBid] = useState(false);
   const [addTime, setAddTime] = useState(false);
   const [addReview, setAddReview] = useState(false);
   const [updatingTime, setUpdatingTime] = useState(false);
+  const [requestingRefund, setRequestingRefund] = useState(false);
   const [countingDown, setCountingDown] = useState(false);
-  const [packageOne, setPackageOne] = useState(trip && trip.packages[0]);
+  const [packageOne, setPackageOne] = useState(trip && trip?.packages[0]);
   const [showTrips, setShowTrips] = useState(true);
   const [selectedPackageItem, setSelectedPackageItem] = useState(null);
   const polylineCoordinates = [];
-  trip.packages.forEach((packageItem) => {
+  trip?.packages.forEach((packageItem) => {
     polylineCoordinates.push({
       latitude: Number(packageItem.deliveryAddressLat),
       longitude: Number(packageItem.deliveryAddressLong),
@@ -217,29 +317,39 @@ function TransactionDetailsScreen(props) {
     );
   };
 
-  const height = Dimensions.get("screen").height;
+  const whenDriverIsApproachingPickUp =
+    trip?.driver &&
+    trip?.status !== "completed" &&
+    trip?.status !== "cancelled" &&
+    trip?.status !== "inTransit";
+  const whenDriverIsDelivering = trip?.status === "inTransit";
+  // const height = Dimensions.get("screen").height;
   useEffect(() => {
-    if (trip.status === "inTransit") {
+    if (trip?.status === "inTransit") {
       setStatus({ text: tripStatuses[2], color: colors.primary });
     }
-    if (trip.status === "cancelled") {
+    if (trip?.status === "cancelled") {
       setStatus({ text: tripStatuses[3], color: colors.danger });
     }
-    if (trip.status === "completed") {
+    if (trip?.status === "completed") {
       setStatus({ text: tripStatuses[4], color: colors.success });
     }
     if (
-      trip.driver &&
-      trip.status !== "completed" &&
-      trip.status !== "cancelled" &&
-      trip.status !== "inTransit"
+      trip?.driver &&
+      trip?.status !== "completed" &&
+      trip?.status !== "cancelled" &&
+      trip?.status !== "inTransit"
     ) {
       setStatus({ text: tripStatuses[1], color: "blue" });
     }
-  }, [trip.status]);
+    return () => {
+      mounted = false;
+    };
+  }, [trip?.status]);
 
   const [refreshing, setRefreshing] = React.useState(false);
   const [showFullScreenMap, setShowFullScreenMap] = useState(false);
+  const [distanceToPickUp, setDistanceToPickUp] = useState("");
 
   const cancelTrip = () => {
     Alert.alert("Cancel Trip?", "Do you want to cancel this trip?", [
@@ -250,7 +360,7 @@ function TransactionDetailsScreen(props) {
       {
         text: "Yes",
         onPress: () => {
-          changeTripStatus(trip._id, "cancelled");
+          changeTripStatus(trip?._id, "cancelled");
         },
       },
     ]);
@@ -261,22 +371,37 @@ function TransactionDetailsScreen(props) {
     (async () => {
       loadTriBids();
       loadTrip();
-
+      getDriverLocation();
       setRefreshing(false);
     })();
   }, []);
+
+  const onDriverLocationChange = (data) => {
+    let d = null;
+    if (data.latitude && data.longitude && packageOne) {
+      d = getDistanceFromLatLonInKm(
+        Number(packageOne.pickUpAddressLat),
+        Number(packageOne.pickUpAddressLong),
+        data.latitude,
+        data.longitude
+      );
+    }
+    mounted && d && d / 1000 > 0
+      ? setDistanceToPickUp(`${Math.round(d / 1000)} km`)
+      : setDistanceToPickUp(`${Math.round(d)} m`);
+  };
 
   if (!packageOne || packageOne === undefined) {
     return (
       <View style={{ justifyContent: "center", alignItems: "center", flex: 1 }}>
         <View>
-          <MaterialIcons name='error-outline' size={100} color='black' />
+          <MaterialIcons name="error-outline" size={100} color="black" />
         </View>
         <AppText style={{ marginVertical: 16 }}>
           Error Loading Trip Details
         </AppText>
         <AppButton
-          title='Go Back'
+          title="Go Back"
           onPress={() => props.navigation.navigate("Home")}
         />
       </View>
@@ -290,58 +415,63 @@ function TransactionDetailsScreen(props) {
         showsHorizontalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
+        }
+      >
         <View style={styles.blueContainer}>
-          {trip.status === "pending" && (
+          {trip?.status === "pending" && (
             <View>
-              {new Date() > new Date(trip.eta) && (
+              {new Date() > new Date(trip?.eta) && (
                 <View
                   style={{
                     backgroundColor: colors.dangerLight,
                     padding: 5,
                     paddingHorizontal: 10,
                     borderRadius: 40,
-                  }}>
+                  }}
+                >
                   <AppText
-                    size='x-small'
+                    size="x-small"
                     style={[
                       styles.light,
                       { textAlign: "center", color: colors.danger },
-                    ]}>
-                    Delivery was due {timeSince(new Date(trip.eta), true)} ago
+                    ]}
+                  >
+                    Delivery was due {timeSince(new Date(trip?.eta), true)} ago
                   </AppText>
                   <AppText
-                    size='x-small'
+                    size="x-small"
                     style={[
                       styles.light,
                       { textAlign: "center", color: colors.success },
-                    ]}>
+                    ]}
+                  >
                     Add time to continue
                   </AppText>
                 </View>
               )}
               <View style={styles.startBox}>
-                <AppText size='16' style={[styles.white, styles.bold]}>
-                  {timeRemaining(trip.eta)}
+                <AppText size="16" style={[styles.white, styles.bold]}>
+                  {timeRemaining(trip?.eta)}
                 </AppText>
                 <Pressable style={styles.plusButton}>
-                  <MaterialCommunityIcons name='plus' color={colors.light} />
+                  <MaterialCommunityIcons name="plus" color={colors.light} />
                 </Pressable>
                 <Pressable
                   style={styles.startButton}
                   onPress={() => {
                     setCountingDown(true);
-                  }}>
-                  <AppText size='16' style={[styles.white, styles.bold]}>
+                  }}
+                >
+                  <AppText size="16" style={[styles.white, styles.bold]}>
                     Start
                   </AppText>
                 </Pressable>
               </View>
             </View>
           )}
-          {trip.status === "inTransit" && (
+          {trip?.status === "inTransit" && (
             <View style={[{ alignItems: "center" }, styles.mv10]}>
-              {new Date() > new Date(trip.eta) && (
+              {new Date() > new Date(trip?.eta) && (
                 <View
                   style={{
                     width: "80%",
@@ -349,33 +479,36 @@ function TransactionDetailsScreen(props) {
                     padding: 5,
                     paddingHorizontal: 10,
                     borderRadius: 40,
-                  }}>
+                  }}
+                >
                   <AppText
-                    size='x-small'
+                    size="x-small"
                     style={[
                       styles.light,
                       { textAlign: "center", color: colors.danger },
-                    ]}>
-                    Delivery was due {timeSince(new Date(trip.eta), true)} ago
+                    ]}
+                  >
+                    Delivery was due {timeSince(new Date(trip?.eta), true)} ago
                   </AppText>
                   <AppText
-                    size='x-small'
+                    size="x-small"
                     style={[
                       styles.light,
                       { textAlign: "center", color: colors.success },
-                    ]}>
+                    ]}
+                  >
                     Add time to continue
                   </AppText>
                 </View>
               )}
-              <AppText size='x-small' style={[styles.light, styles.mv10]}>
+              <AppText size="x-small" style={[styles.light, styles.mv10]}>
                 Delivery due in
               </AppText>
 
               <CountDown
-                until={new Date(trip.eta) - new Date()}
+                until={timeRemainingToETA}
                 size={20}
-                onFinish={() => alert("Finished")}
+                onFinish={() => alert("Time for trip has Elapsed")}
                 digitStyle={{ backgroundColor: "transparent" }}
                 timeLabelStyle={{
                   color: colors.light,
@@ -390,64 +523,146 @@ function TransactionDetailsScreen(props) {
                 showSeparator
                 running={true}
               />
-              <Pressable
-                style={styles.addTimeButton}
-                onPress={() => setAddTime(true)}
-                disabled={updatingTime}>
-                <AppText size='16' style={[styles.light]}>
-                  Add time
-                </AppText>
-              </Pressable>
+              {user._id === trip?.sender?._id && (
+                <Pressable
+                  style={styles.addTimeButton}
+                  onPress={() => setAddTime(true)}
+                  disabled={updatingTime}
+                >
+                  <AppText size="16" style={[styles.light]}>
+                    Add time
+                  </AppText>
+                </Pressable>
+              )}
             </View>
           )}
-          {trip.status === "completed" && (
+          {trip?.status === "completed" && (
             <View style={[{ alignItems: "center" }, styles.mv10]}>
-              <AppText size='large' style={[styles.light, styles.mv10]}>
+              <AppText size="large" style={[styles.light, styles.mv10]}>
                 Delivery completed
               </AppText>
             </View>
           )}
-          {trip.status === "cancelled" && (
+          {trip?.status === "cancelled" && (
             <View style={[{ alignItems: "center" }, styles.mv10]}>
-              <AppText size='large' style={[styles.light, styles.mv10]}>
+              <AppText size="large" style={[styles.light, styles.mv10]}>
                 Delivery cancelled
               </AppText>
             </View>
           )}
 
-          <AppText size='16' style={[styles.white, styles.bold]}>
-            Order ID: #{trip.tripCode}
+          <AppText size="16" style={[styles.white, styles.bold]}>
+            Order ID: #{trip?.tripCode}
           </AppText>
-          <AppText size='x-small' style={[styles.light, styles.mv10]}>
-            This transaction was initiated by {trip.sender.firstName}{" "}
-            {trip.sender.lastName}
+          <AppText size="x-small" style={[styles.light, styles.mv10]}>
+            This transaction was initiated by {trip?.sender.firstName}{" "}
+            {trip?.sender.lastName}
           </AppText>
         </View>
         <View style={[styles.whiteContainer]}>
           <UserStatusComponent
-            heading={`${trip.sender.firstName} ${trip.sender.lastName}`}
-            subHeading='Sender'
-            status='Joined'
+            heading={`${trip?.sender.firstName} ${trip?.sender.lastName}`}
+            subHeading="Sender"
+            status="Joined"
           />
           <UserStatusComponent
             heading={
-              trip.driver
-                ? `${trip.driver?.firstName} ${trip.driver?.lastName}`
+              trip?.driver
+                ? `${trip?.driver?.firstName} ${trip?.driver?.lastName}`
                 : `Waiting for Driver`
             }
-            subHeading='Delivery Personel'
-            status={trip.driver ? "Joined" : "Waiting"}
+            subHeading="Delivery Personel"
+            status={trip?.driver ? "Joined" : "Waiting"}
           />
-          {trip.packages.map((receiver, index) => (
+          {trip?.packages.map((receiver, index) => (
             <UserStatusComponent
               key={index}
               heading={receiver.receipentName}
               subHeading={`Receiver ${index + 1}`}
-              status={trip.receipent ? "Joined" : "Waiting"}
+              status={
+                trip?.receipentsThatJoined.includes(receiver.receipentNumber)
+                  ? "Joined"
+                  : "Waiting"
+              }
             />
           ))}
+          {user._id === trip?.sender?._id &&
+            trip?.status === "inTransit" &&
+            trip?.refund && (
+              <View
+                style={[
+                  {
+                    backgroundColor: colors.successLight,
+                    padding: 10,
+                    borderColor: colors.success,
+                    borderWidth: 1,
+                    borderRadius: 15,
+                  },
+                  styles.mv10,
+                ]}
+              >
+                <AppText
+                  style={[
+                    styles.bold,
+                    styles.mv10,
+                    { color: colors.success, textAlign: "center" },
+                  ]}
+                >
+                  You will get a partial refund at the end of this Trip
+                </AppText>
+              </View>
+            )}
+          {user._id === trip?.sender?._id &&
+            trip?.status === "inTransit" &&
+            new Date() > new Date(trip?.eta) && (
+              <View
+                style={{
+                  backgroundColor: colors.dangerLight,
+                  padding: 10,
+                  borderColor: colors.danger,
+                  borderWidth: 1,
+                  borderRadius: 15,
+                }}
+              >
+                <AppText
+                  style={[
+                    styles.bold,
+                    styles.mv10,
+                    { color: colors.danger, textAlign: "center" },
+                  ]}
+                >
+                  Delivery was due {timeSince(new Date(trip?.eta), true)} ago
+                </AppText>
+                <AppButton
+                  onPress={() => setAddTime(true)}
+                  disabled={updatingTime}
+                  title="Extend Time"
+                  fullWidth
+                />
+                <AppButton
+                  onPress={() => requestForRefund(trip?._id, { refund: true })}
+                  disabled={requestingRefund || trip?.refund}
+                  title={
+                    requestingRefund ? (
+                      <ActivityIndicator
+                        animating={requestingRefund}
+                        color={colors.black}
+                      />
+                    ) : (
+                      "Request Partial Refund"
+                    )
+                  }
+                  fullWidth
+                  secondary
+                  style={[
+                    { borderColor: colors.black, borderWidth: 1 },
+                    styles.mv10,
+                  ]}
+                />
+              </View>
+            )}
           <View style={styles.mapView}>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={{
                 position: "absolute",
                 top: 10,
@@ -464,19 +679,53 @@ function TransactionDetailsScreen(props) {
                 style={{ color: colors.white, fontWeight: "bold" }}>
                 Full Screen
               </AppText>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <MapComponent
               driverLocation={driverLocation}
-              packages={trip.packages}
+              packages={trip?.packages}
+              tripId={trip?._id}
+              onDriverLocationChange={onDriverLocationChange}
             />
+
+            {whenDriverIsApproachingPickUp && user._id !== trip?.driver?._id && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  padding: 10,
+                  backgroundColor: colors.white,
+                  right: 10,
+                  borderRadius: 10,
+                }}
+              >
+                <AppText style={{ color: colors.black }}>
+                  Driver is {distanceToPickUp} to pick up.
+                </AppText>
+              </View>
+            )}
+            {/* {whenDriverIsDelivering && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  padding: 10,
+                  backgroundColor: colors.white,
+                  right: 10,
+                  borderRadius: 10,
+                }}>
+                <AppText style={{ color: colors.black }}>
+                  Driver is 10km away
+                </AppText>
+              </View>
+            )} */}
 
             <View style={styles.mapStatus}>
               <AppText style={{ color: status.color }}>{status.text}</AppText>
             </View>
           </View>
-          {trip.status === "completed" && (
+          {trip?.status === "completed" && user._id !== trip?.driver?._id && (
             <AppButton
-              title='Drop Review About the Trip'
+              title="Drop Review About the Trip"
               small
               fullWidth={false}
               style={{
@@ -487,10 +736,30 @@ function TransactionDetailsScreen(props) {
               onPress={() => setAddReview(true)}
             />
           )}
-          {trip.status !== "cancelled" && trip.status !== "completed" && (
+          {/* for sender */}
+          {user._id === trip?.sender?._id &&
+            trip?.status !== "cancelled" &&
+            trip?.status !== "completed" && (
+              <View>
+                <AppButton
+                  title="Cancel Trip"
+                  small
+                  fullWidth={false}
+                  style={{
+                    alignSelf: "flex-start",
+                    borderColor: colors.red,
+                    borderWidth: 1,
+                  }}
+                  secondary
+                  onPress={cancelTrip}
+                />
+              </View>
+            )}
+          {/* for driver */}
+          {user._id === trip?.driver?._id && trip?.status === "pending" && (
             <View>
               <AppButton
-                title='Cancel Trip'
+                title="Cancel Trip"
                 small
                 fullWidth={false}
                 style={{
@@ -503,7 +772,7 @@ function TransactionDetailsScreen(props) {
               />
             </View>
           )}
-          {user._id === trip.sender?._id && trip.status === "pending" && (
+          {user._id === trip?.sender?._id && trip?.status === "pending" && (
             <View>
               {bids && bids.length > 0 && (
                 <AppText style={[styles.black, styles.mv10]}>
@@ -527,8 +796,10 @@ function TransactionDetailsScreen(props) {
                     renderItem={({ item }) => (
                       <BidResponseItem
                         bidItem={item}
-                        onAccept={() => setAcceptBid(true)}
-                        onAccept={() => acceptRejectBid(item._id, "accepted")}
+                        onAccept={() => {
+                          setAcceptBid(true);
+                          acceptRejectBid(item._id, "accepted");
+                        }}
                         onReject={() => acceptRejectBid(item._id, "rejected")}
                         loadingAccept={
                           processingBid.id === item._id &&
@@ -541,6 +812,11 @@ function TransactionDetailsScreen(props) {
                           processingBid.loading
                         }
                         disableButtons={processingBid.loading}
+                        onPressProfile={() => {
+                          props.navigation.navigate("DriverProfileScreen", {
+                            userId: item?.driver?._id,
+                          });
+                        }}
                       />
                     )}
                     keyExtractor={(item) => item.id}
@@ -551,7 +827,7 @@ function TransactionDetailsScreen(props) {
           )}
 
           {/* For Pending Trip  */}
-          {user._id === trip.driver?._id && trip.status === "pending" && (
+          {user._id === trip?.driver?._id && trip?.status === "pending" && (
             <View>
               <View>
                 {!startJorney ? (
@@ -572,13 +848,15 @@ function TransactionDetailsScreen(props) {
                       // onPress={() => setStartJorney(true)}
                       onPress={async () => {
                         const newCode = await saveAndSendTripCode(
-                          trip._id,
+                          trip?._id,
                           trip?.sender?.email,
                           "start"
                         );
                         if (newCode) {
-                          setCode(newCode);
-                          setStartJorney(true);
+                          if (mounted) {
+                            setCode(newCode);
+                            setStartJorney(true);
+                          }
                         }
                       }}
                     />
@@ -589,9 +867,9 @@ function TransactionDetailsScreen(props) {
                       Get OTP to start the journey
                     </AppText>
                     <AppTextInput
-                      placeholder='Enter Code'
-                      keyboardType='number-pad'
-                      returnKeyType='done'
+                      placeholder="Enter Code"
+                      keyboardType="number-pad"
+                      returnKeyType="done"
                       style={styles.ph10}
                       controlText={
                         sendingTripCode ? (
@@ -600,18 +878,34 @@ function TransactionDetailsScreen(props) {
                             color={colors.primary}
                           />
                         ) : (
-                          "Resend Code"
+                          <ResetButton
+                            onPress={async () => {
+                              const newCode = await saveAndSendTripCode(
+                                trip?._id,
+                                trip?.sender?.email,
+                                "start"
+                              );
+                              if (newCode) {
+                                if (mounted) {
+                                  setCode(newCode);
+                                  setStartJorney(true);
+                                }
+                              }
+                            }}
+                          />
                         )
                       }
                       onPressControlText={async () => {
                         const newCode = await saveAndSendTripCode(
-                          trip._id,
-                          user.email,
+                          trip?._id,
+                          trip?.sender?.email,
                           "start"
                         );
                         if (newCode) {
-                          setCode(newCode);
-                          setStartJorney(true);
+                          if (mounted) {
+                            setCode(newCode);
+                            setStartJorney(true);
+                          }
                         }
                       }}
                       maxLength={6}
@@ -619,7 +913,7 @@ function TransactionDetailsScreen(props) {
                         if (text.length === 6) {
                           if (text.toString() === code.toString()) {
                             showToast("Code Approved! Trip will start now.");
-                            changeTripStatus(trip._id, "inTransit");
+                            changeTripStatus(trip?._id, "inTransit");
                           } else {
                             showToast("Invalid Code!");
                           }
@@ -638,7 +932,7 @@ function TransactionDetailsScreen(props) {
           {/* For Pending Trip  */}
 
           {/* For Trip In Transit  */}
-          {user._id === trip.driver?._id && trip.status === "inTransit" && (
+          {user._id === trip?.driver?._id && trip?.status === "inTransit" && (
             <View>
               <View>
                 {!startJorney ? (
@@ -656,13 +950,15 @@ function TransactionDetailsScreen(props) {
                       // onPress={() => setStartJorney(true)}
                       onPress={async () => {
                         // const newCode = await saveAndSendTripCode(
-                        //   trip._id,
+                        //   trip?._id,
                         //   trip?.sender?.email,
                         //   "end"
                         // );
                         // if (newCode) {
                         // setCode(newCode);
-                        setStartJorney(true);
+                        if (mounted) {
+                          setStartJorney(true);
+                        }
                         // }
                       }}
                     />
@@ -671,7 +967,7 @@ function TransactionDetailsScreen(props) {
                   <View style={styles.mv10}>
                     {showTrips ? (
                       <View style={styles.mv10}>
-                        {trip.packages.map((packageItem, index) => (
+                        {trip?.packages.map((packageItem, index) => (
                           <TripItem
                             index={index}
                             key={index}
@@ -680,11 +976,13 @@ function TransactionDetailsScreen(props) {
                               setShowTrips(false);
                               setSelectedPackageItem(packageItem);
                               const newCode = await saveAndSendEndTripCode(
-                                trip._id,
+                                trip?._id,
                                 packageItem._id
                               );
                               if (newCode) {
-                                setCode(newCode);
+                                if (mounted) {
+                                  setCode(newCode);
+                                }
                                 // setStartJorney(true);
                               }
                             }}
@@ -703,18 +1001,20 @@ function TransactionDetailsScreen(props) {
                           the journey.
                         </AppText>
                         <AppTextInput
-                          placeholder='Enter Code'
-                          keyboardType='number-pad'
-                          returnKeyType='done'
+                          placeholder="Enter Code"
+                          keyboardType="number-pad"
+                          returnKeyType="done"
                           onChangeText={(text) => {
-                            setEndTripCode(text);
+                            if (mounted) {
+                              setEndTripCode(text);
+                            }
                             if (text.length === 6) {
                               if (text.toString() === code.toString()) {
                                 showToast(
                                   "Code Approved! This package will be marked as delivered."
                                 );
                                 changeTripPackageStatus(
-                                  trip._id,
+                                  trip?._id,
                                   selectedPackageItem._id,
                                   "completed"
                                 );
@@ -731,33 +1031,61 @@ function TransactionDetailsScreen(props) {
                                 color={colors.primary}
                               />
                             ) : (
-                              "Resend Code"
+                              <ResetButton
+                                onPress={async () => {
+                                  const newCode = await saveAndSendEndTripCode(
+                                    trip?._id,
+                                    selectedPackageItem._id
+                                  );
+                                  if (newCode) {
+                                    if (mounted) {
+                                      setCode(newCode);
+                                      setStartJorney(true);
+                                    }
+                                  }
+                                }}
+                              />
                             )
                           }
                           onPressControlText={async () => {
                             const newCode = await saveAndSendEndTripCode(
-                              trip._id,
+                              trip?._id,
                               selectedPackageItem._id
                             );
                             if (newCode) {
-                              setCode(newCode);
-                              setStartJorney(true);
+                              if (mounted) {
+                                setCode(newCode);
+                                setStartJorney(true);
+                              }
                             }
                           }}
                         />
                         <AppButton
-                          title='Proceed'
+                          title="Proceed"
                           style={styles.mv10}
                           onPress={() => {
-                            changeTripPackageStatus(
-                              trip._id,
-                              selectedPackageItem._id,
-                              "completed"
-                            );
+                            // changeTripPackageStatus(
+                            //   trip?._id,
+                            //   selectedPackageItem._id,
+                            //   "completed"
+                            // );
+
+                            if (code.toString() === endTripCode.toString()) {
+                              showToast(
+                                "Code Approved! This package will be marked as delivered."
+                              );
+                              changeTripPackageStatus(
+                                trip?._id,
+                                selectedPackageItem._id,
+                                "completed"
+                              );
+                            } else {
+                              showToast("Invalid Code!");
+                            }
                           }}
                         />
                         <AppButton
-                          title='Go Back'
+                          title="Go Back"
                           style={styles.mv10}
                           secondary
                           onPress={() => setShowTrips(true)}
@@ -771,16 +1099,28 @@ function TransactionDetailsScreen(props) {
           )}
           {/* For Trip In Transit  */}
 
-          <SectionHeader headerText='Details' />
-          {trip.packages.map((packageItem, index) => (
+          <SectionHeader headerText="Details" />
+          <DetailItem
+            header="Sender's name"
+            subHeader={`${trip?.sender.firstName} ${trip?.sender.lastName}`}
+          />
+          <DetailItem
+            header="Sender's phone"
+            subHeader={trip?.sender.phoneNumber}
+          />
+          {trip?.packages.map((packageItem, index) => (
             <View key={index}>
               <SectionHeader headerText={`Package ${index + 1}`} />
               <DetailItem
-                header='Destination'
+                header="Destination"
                 subHeader={packageItem.deliveryAddress}
               />
               <DetailItem
-                header='Date'
+                header="Recipient Number"
+                subHeader={packageItem.receipentNumber}
+              />
+              <DetailItem
+                header="Date"
                 subHeader={new Date(packageItem.date).toLocaleString()}
               />
             </View>
@@ -790,9 +1130,17 @@ function TransactionDetailsScreen(props) {
       <Pressable
         style={[styles.floatButton, { bottom: 16 }]}
         onPress={() =>
-          props.navigation.navigate("ChatScreen", { tripId: trip._id })
-        }>
-        <Ionicons name='chatbox' color={colors.white} size={16} />
+          props.navigation.navigate("ChatScreen", { tripId: trip?._id })
+        }
+      >
+        {relatedNotifications?.length > 0 && (
+          <View style={styles.newChatIndicator}>
+            <AppText style={[styles.white, styles.bold]}>
+              {relatedNotifications?.length}
+            </AppText>
+          </View>
+        )}
+        <Ionicons name="chatbox" color={colors.white} size={16} />
         <AppText style={[styles.white, styles.mh10]}>Chat now</AppText>
       </Pressable>
       <AddExtraTime
@@ -800,12 +1148,12 @@ function TransactionDetailsScreen(props) {
         toggleModal={() => setAddTime(false)}
         onSubmit={(seconds) => {
           // plus seconds
-          let timeObject = new Date(trip.eta);
+          let timeObject = new Date(trip?.eta);
           let milliseconds = seconds * 1000; //
           const newDate = new Date(timeObject.getTime() + milliseconds);
 
           //Increment eta
-          updateTrip(trip._id, { eta: newDate });
+          updateTripETA(trip?._id, { eta: newDate });
         }}
       />
       <AddReview
@@ -819,16 +1167,16 @@ function TransactionDetailsScreen(props) {
       <Modal visible={showFullScreenMap}>
         <View style={{ width: "100%", height: "100%" }}>
           <Ionicons
-            name='close-circle'
+            name="close-circle"
             color={colors.light}
             size={30}
             style={{ position: "absolute", top: 30, right: 20, zIndex: 3 }}
             onPress={() => setShowFullScreenMap(false)}
           />
-          <MapComponent
+          {/* <MapComponent
             driverLocation={driverLocation}
-            packages={trip.packages}
-          />
+            packages={trip?.packages}
+          /> */}
         </View>
       </Modal>
     </View>
@@ -890,7 +1238,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   mapView: {
-    height: 200,
+    height: Dimensions.get("screen").height * 0.6,
     width: "100%",
     borderRadius: 16,
     backgroundColor: colors.inputGray,
@@ -901,6 +1249,16 @@ const styles = StyleSheet.create({
   mb32: { marginBottom: 32 },
   mh10: { marginHorizontal: 10 },
   mv10: { marginVertical: 10 },
+  newChatIndicator: {
+    position: "absolute",
+    top: -15,
+    borderRadius: 20,
+    backgroundColor: colors.red,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 3,
+    paddingHorizontal: 10,
+  },
   ph10: { paddingHorizontal: 10 },
   plusButton: {
     backgroundColor: "#4A4F72",

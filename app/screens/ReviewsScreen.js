@@ -15,21 +15,32 @@ import colors from "../config/colors";
 import reviewApi from "../api/reviews";
 
 function ReviewsScreen(props) {
+  let mounted = true;
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [refreshing, setRefreshing] = React.useState(false);
 
   const getMyReviews = async () => {
-    setLoadingReviews(true);
+    if (mounted) {
+      setLoadingReviews(true);
+    }
 
     const { data, error } = await reviewApi.getMyReviews();
     if (!error && data) {
-      setReviews(data);
+      if (mounted) {
+        setReviews(data);
+      }
     }
-    setLoadingReviews(false);
+    if (mounted) {
+      setLoadingReviews(false);
+    }
   };
   useEffect(() => {
     getMyReviews();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const onRefresh = React.useCallback(() => {

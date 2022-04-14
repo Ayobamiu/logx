@@ -1,15 +1,17 @@
 /** @format */
 
+import axios from "axios";
 import storage from "../auth/storage";
 import apiClient from "./client";
 
 const withdraw = async (data, onUploadProgress) => {
   const token = await storage.getToken();
+  let user = null;
   let transaction = {};
   let err = false;
 
   try {
-    const result = await apiClient.post(
+    const result = await axios.post(
       "withdraw",
       { ...data },
       {
@@ -21,11 +23,13 @@ const withdraw = async (data, onUploadProgress) => {
         },
       }
     );
-    transaction = result.data.transaction;
+    if (result.data) {
+      transaction = result.data.transaction;
+      user = result.data.user;
+    }
   } catch (error) {
     err = true;
   }
-  return { transaction, error: err };
 };
 
 export default {

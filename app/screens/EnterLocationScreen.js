@@ -1,17 +1,20 @@
 /** @format */
 
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Modal,
+  KeyboardAvoidingView,
+  Pressable,
+  Platform,
+  Dimensions,
 } from "react-native";
 import AppTextInput from "../components/AppTextInput";
 import SectionHeader from "../components/SectionHeader";
-import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import colors from "../config/colors";
 import MapView, { Marker } from "react-native-maps";
 import useLocation from "../hooks/useLocation";
@@ -28,6 +31,7 @@ import showToast from "../config/showToast";
 import { get } from "../utility/cache";
 import AppModal from "../components/AppModal";
 import SelectJorneyTypeAnyWhere from "../components/SelectJorneyTypeAnyWhere";
+import axios from "axios";
 
 // import {  } from "react-native-svg";
 
@@ -45,30 +49,36 @@ const validationSchema = Yup.object().shape({
 });
 
 function EnterLocationScreen(props) {
+  let mounted = true;
+
+  const formikForm = useRef();
   const { packages, setPackages } = useContext(PackageContext);
   const { user } = useContext(AuthContext);
   const [predictions, setPredictions] = useState([]);
   const [loadingPredictions, setLoadingPredictions] = useState(false);
-  const { getLocation } = useLocation();
+  const { getLocation, getAddressFromLatLong, getLastLocation } = useLocation();
   const [showToSuggestions, setShowToSuggestions] = useState(false);
   const [showFromSuggestions, setShowFromSuggestions] = useState(false);
   const [deliveryPoint, setDeliveryPoint] = useState(null);
-  console.log("deliveryPoint", deliveryPoint);
   const [pickUPoint, setPickUPoint] = useState(null);
-  console.log("pickUPoint", pickUPoint);
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [pickUpAddress, setPickUpAddress] = useState("");
   const [deliveryRegion, setDeliveryRegion] = useState("");
   const [pickUpRegion, setPickUpRegion] = useState("");
   const [journeyType, setJourneyType] = useState("");
   const [openJourneyTypePanel, setOpenJourneyTypePanel] = useState(false);
+  const [gettingMyCurrentLocation, setGettingMyCurrentLocation] = useState(
+    false
+  );
 
   const [sameRegionError, setSameRegionError] = useState(false);
   const [differentRegionError, setDifferentRegionError] = useState(false);
 
   const closeAllSuggest = () => {
-    setShowToSuggestions(false);
-    setShowFromSuggestions(false);
+    if (mounted) {
+      setShowToSuggestions(false);
+      setShowFromSuggestions(false);
+    }
   };
   const [region, setRegion] = useState({
     latitude: 8.9233587,
@@ -80,66 +90,62 @@ function EnterLocationScreen(props) {
   useEffect(() => {
     (async () => {
       const data = await getLocation();
-      setRegion({
-        latitude: data?.coords?.latitude,
-        longitude: data?.coords?.longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      });
+      if (mounted) {
+        setRegion({
+          latitude: data?.coords?.latitude,
+          longitude: data?.coords?.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+      }
     })();
     (async () => {
       const type = await get("journey:type");
-      setJourneyType(type);
+      if (mounted) {
+        setJourneyType(type);
+      }
     })();
 
     return () => {
-      setRegion({
-        latitude: 8.9233587,
-        longitude: -0.3674603,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      });
+      mounted = false;
     };
   }, [journeyType]);
 
   const getPredictions = async (value) => {
-    setLoadingPredictions(true);
-    await placeApi
-      .placePrediction(value)
+    var config = {
+      method: "get",
+
+      url: `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(
+        value
+      )}&inputtype=textquery&fields=formatted_address%2Cname%2Crating%2Copening_hours%2Cgeometry%2Cplace_id&key=AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y`,
+      headers: {},
+    };
+    if (mounted) {
+      setLoadingPredictions(true);
+    }
+    await axios(config)
       .then((response) => {
-        setPredictions(
-          response?.data?.predictions?.map((i) => {
-            return { description: i.description, place_id: i.place_id };
-          })
-        );
+        if (mounted) {
+          setPredictions(
+            response?.data?.candidates?.map((i) => {
+              return {
+                formatted_address: i.formatted_address,
+                name: i.name,
+                place_id: i.place_id,
+                latitude: i.geometry.location.lat,
+                longitude: i.geometry.location.lng,
+              };
+            })
+          );
+        }
       })
       .catch((error) => {});
-    setLoadingPredictions(false);
+    if (mounted) {
+      setLoadingPredictions(false);
+    }
   };
 
   const [loadingLatLong, setLoadingLatLong] = useState(false);
-  const getLatLong = async (placeId, type) => {
-    setLoadingLatLong(true);
-    await placeApi
-      .getLatAndLong(placeId)
-      .then((response) => {
-        if (type === "d") {
-          setDeliveryPoint(response?.data);
-        } else {
-          setPickUPoint(response?.data);
-          setRegion({
-            latitude: response?.data?.latitude,
-            longitude: response?.data?.longitude,
-            latitudeDelta: 0.1922,
-            longitudeDelta: 0.0421,
-          });
-        }
-        setLoadingLatLong(false);
-      })
-      .catch((error) => {
-        setLoadingLatLong(false);
-      });
-  };
 
   const AutoCompleteBox = ({
     show = false,
@@ -166,10 +172,7 @@ function EnterLocationScreen(props) {
               close
             </AppText>
           </TouchableOpacity>
-          {/* <ActivityIndicator
-            animating={results.length === 0 && loadingPredictions}
-            color={colors.primary}
-          /> */}
+
           {results.map((i, index) => (
             <TouchableOpacity
               key={index}
@@ -179,10 +182,13 @@ function EnterLocationScreen(props) {
                 borderBottomWidth: 1,
               }}
               onPress={() => {
-                onPressResult(i);
+                onPressResult(i.formatted_address);
                 closePanel();
               }}>
-              <AppText>{i}</AppText>
+              <AppText size='x-small'>{i.name}</AppText>
+              <AppText style={{ color: colors.secondary }} size='xx-small'>
+                {i.formatted_address}
+              </AppText>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -191,41 +197,115 @@ function EnterLocationScreen(props) {
   };
 
   const getPickUpAndDeliveryRegion = async () => {
-    const pickUpAddressData = await Location.reverseGeocodeAsync({
-      latitude: pickUPoint?.latitude,
-      longitude: pickUPoint?.longitude,
-    }).catch((error) => {});
-    setPickUpRegion(pickUpAddressData && pickUpAddressData[0]?.region);
-    const deliveryAddressData = await Location.reverseGeocodeAsync({
-      latitude: deliveryPoint?.latitude,
-      longitude: deliveryPoint?.longitude,
-    }).catch((error) => {});
-    setDeliveryRegion(deliveryAddressData && deliveryAddressData[0]?.region);
+    if (mounted) {
+      setLoadingLatLong(true);
+    }
+    // const pickUpAddressData = await Location.reverseGeocodeAsync({
+    //   latitude: pickUPoint?.latitude,
+    //   longitude: pickUPoint?.longitude,
+    // }).catch((error) => {
+    // });
+
+    if (pickUPoint?.latitude && pickUPoint?.longitude) {
+      const pickUpAddressData = await axios
+        .get(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${pickUPoint?.latitude},${pickUPoint?.longitude}&key=AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y&type=street`
+        )
+        .catch((e) => {});
+      const pickUpAddressResult = pickUpAddressData?.data.results[0];
+      let pickUpAddressComponent = pickUpAddressResult?.address_components.map(
+        (i) => {
+          if (!i.types.includes("country")) {
+            return i.long_name;
+          } else {
+            return "";
+          }
+        }
+      );
+      // if (!pickUpAddressComponent) {
+      //   pickUpAddressComponent = pickUpAddressResult?.address_components.find(
+      //     (i) => i.types.includes("country")
+      //   );
+      // }
+
+      if (mounted) {
+        setPickUpRegion(pickUpAddressComponent.filter((v) => v != ""));
+      }
+    }
+
+    if (deliveryPoint?.latitude && deliveryPoint?.longitude) {
+      const deliveryAddressData = await axios
+        .get(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${deliveryPoint?.latitude},${deliveryPoint?.longitude}&key=AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y`
+        )
+        .catch((e) => {});
+      const deliveryAddressResult = deliveryAddressData?.data.results[0];
+
+      let deliveryAddressComponent = deliveryAddressResult?.address_components.map(
+        (i) => {
+          if (!i.types.includes("country")) {
+            return i.long_name;
+          } else {
+            return "";
+          }
+        }
+      );
+      if (mounted) {
+        setDeliveryRegion(deliveryAddressComponent.filter((v) => v != ""));
+      }
+    }
+    setLoadingLatLong(false);
   };
 
-  useEffect(() => {
-    getPickUpAndDeliveryRegion();
-  }, [pickUPoint, deliveryPoint]);
-  return (
-    <Formik
-      initialValues={{}}
-      onSubmit={async (values) => {
-        if (journeyType === "intra-state") {
-          if (pickUpRegion !== deliveryRegion) {
-            setDifferentRegionError(true);
-            //return showPopUp
-            return;
-          }
+  const handleSubmitPackages = async (values) => {
+    if (!pickUpRegion || pickUpRegion === undefined) {
+      showToast("Select a pick up address from suggestions");
+      return;
+    }
+    if (!deliveryRegion || deliveryRegion === undefined) {
+      showToast("Select a delivery address from suggestions");
+      return;
+    }
+    const intersection = deliveryRegion.filter((element) =>
+      pickUpRegion.includes(element)
+    );
+    let sameArea = intersection.length > 0;
+
+    if (journeyType === "intra-state") {
+      if (!sameArea) {
+        if (mounted) {
+          setDifferentRegionError(true);
         }
-        if (journeyType === "inter-state") {
-          if (pickUpRegion === deliveryRegion) {
-            setSameRegionError(true);
-            return;
-          }
+        return;
+      }
+    }
+    if (journeyType === "inter-state") {
+      if (sameArea) {
+        if (mounted) {
+          setSameRegionError(true);
         }
-        if (packages.length > 0) {
-          let currentPackages = packages;
-          currentPackages[currentPackages.length - 1] = {
+        return;
+      }
+    }
+    if (packages.length > 0) {
+      let currentPackages = packages;
+      currentPackages[currentPackages.length - 1] = {
+        ...values,
+        pickUpAddressLat: pickUPoint.latitude,
+        pickUpAddressLong: pickUPoint.longitude,
+        deliveryAddressLat: deliveryPoint.latitude,
+        deliveryAddressLong: deliveryPoint.longitude,
+        senderName: user.firstName,
+        senderNumber: user.phoneNumber,
+      };
+      if (mounted) {
+        setPackages(currentPackages);
+      }
+    } else {
+      if (mounted) {
+        setPackages((currentValue) => [
+          ...currentValue,
+          {
             ...values,
             pickUpAddressLat: pickUPoint.latitude,
             pickUpAddressLong: pickUPoint.longitude,
@@ -233,193 +313,328 @@ function EnterLocationScreen(props) {
             deliveryAddressLong: deliveryPoint.longitude,
             senderName: user.firstName,
             senderNumber: user.phoneNumber,
-          };
-          setPackages(currentPackages);
-        } else {
-          setPackages((currentValue) => [
-            ...currentValue,
-            {
-              ...values,
-              pickUpAddressLat: pickUPoint.latitude,
-              pickUpAddressLong: pickUPoint.longitude,
-              deliveryAddressLat: deliveryPoint.latitude,
-              deliveryAddressLong: deliveryPoint.longitude,
-              senderName: user.firstName,
-              senderNumber: user.phoneNumber,
-            },
-          ]);
-        }
+          },
+        ]);
+      }
+    }
 
-        props.navigation.navigate("AddPackageScreen");
-      }}
+    props.navigation.navigate("AddPackageScreen");
+  };
+
+  const useMyCurrentPositionAsPickUpLocation = async () => {
+    if (mounted) {
+      setGettingMyCurrentLocation(true);
+    }
+    const data = await getLastLocation();
+
+    if (!data) {
+      if (mounted) {
+        setGettingMyCurrentLocation(false);
+      }
+      return showToast(
+        "Error getting your current location! Type your Location."
+      );
+    }
+
+    if (data?.coords?.latitude && data?.coords?.longitude) {
+      let currentAddresData = await axios
+        .get(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${data?.coords?.latitude},${data?.coords?.longitude}&key=AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y&result_type=street_address`
+        )
+        .catch((e) => {});
+      if (!currentAddresResult) {
+        showToast(
+          "Could not retrieve your street address📍, providing alternate address.🗾"
+        );
+        currentAddresData = await axios
+          .get(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${data?.coords?.latitude},${data?.coords?.longitude}&key=AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y`
+          )
+          .catch((e) => {});
+      }
+      const currentAddresResult = currentAddresData?.data.results[0];
+      if (mounted && currentAddresResult) {
+        setPickUpAddress(currentAddresResult.formatted_address);
+        formikForm?.current?.handleChange("from")(
+          currentAddresResult.formatted_address
+        );
+        formikForm?.current?.handleChange("pickUpAddress")(
+          currentAddresResult.formatted_address
+        );
+        formikForm?.current?.handleChange("pickUpAddressPlaceId")(
+          currentAddresResult.place_id
+        );
+        setPickUPoint({
+          latitude: data?.coords?.latitude,
+          longitude: data?.coords?.longitude,
+        });
+        setRegion({
+          latitude: data?.coords?.latitude,
+          longitude: data?.coords?.longitude,
+          latitudeDelta: 0.1922,
+          longitudeDelta: 0.0421,
+        });
+      }
+    }
+
+    if (mounted) {
+      setGettingMyCurrentLocation(false);
+    }
+  };
+
+  useEffect(() => {
+    if (pickUPoint || deliveryPoint) {
+      getPickUpAndDeliveryRegion();
+    }
+  }, [pickUPoint, deliveryPoint]);
+  return (
+    <Formik
+      innerRef={formikForm}
+      initialValues={{}}
+      onSubmit={handleSubmitPackages}
       validationSchema={validationSchema}>
       {({ handleChange, handleBlur, handleSubmit, errors, values }) => (
-        <View style={styles.container}>
-          <View style={styles.inputBox}>
-            <View style={{ flexDirection: "row" }}>
-              <SectionHeader headerText='Enter destination details' />
-              <ActivityIndicator
-                color={colors.primary}
-                animating={loadingLatLong}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : ""}
+          style={styles.container}>
+          <ScrollView
+            contentContainerStyle={{
+              minHeight: "100%",
+            }}>
+            <View style={styles.inputBox}>
+              <View style={{ flexDirection: "row" }}>
+                <SectionHeader headerText='Enter destination details' />
+                <ActivityIndicator
+                  size='large'
+                  color={colors.primary}
+                  animating={loadingLatLong}
+                />
+              </View>
+              <AppTextInput
+                editable={!loadingLatLong}
+                white
+                placeholder='Where are you picking from?'
+                style={{ paddingHorizontal: 10 }}
+                Icon={
+                  <TouchableOpacity
+                    disabled={gettingMyCurrentLocation}
+                    style={{ flexDirection: "row" }}
+                    onPress={useMyCurrentPositionAsPickUpLocation}>
+                    <ActivityIndicator
+                      animating={gettingMyCurrentLocation}
+                      color={colors.primary}
+                    />
+                    <MaterialIcons
+                      name='my-location'
+                      size={20}
+                      color={colors.black}
+                      onPress={useMyCurrentPositionAsPickUpLocation}
+                    />
+                  </TouchableOpacity>
+                }
+                onChangeText={async (value) => {
+                  handleChange("pickUpAddress")(value);
+                  handleChange("pickUpAddressPlaceId")("23.3");
+                  handleChange("from")(value);
+
+                  getPredictions(value);
+                }}
+                onBlur={handleBlur("pickUpAddress")}
+                autoCapitalize='none'
+                onFocus={() => {
+                  setShowToSuggestions(false);
+                  setShowFromSuggestions(true);
+                }}
+                value={values.pickUpAddress}
               />
+              <AutoCompleteBox
+                show={showFromSuggestions}
+                closePanel={closeAllSuggest}
+                results={predictions?.map((i) => {
+                  return {
+                    name: i.name,
+                    formatted_address: i.formatted_address,
+                  };
+                })}
+                onPressResult={(value) => {
+                  setPickUpAddress(value);
+                  handleChange("from")(value);
+                  const targetAdd = predictions.find(
+                    (i) => i.formatted_address === value
+                  );
+                  handleChange("pickUpAddress")(`${targetAdd.name} ${value}`);
+
+                  handleChange("pickUpAddressPlaceId")(targetAdd.place_id);
+                  // getLatLong(targetAdd.place_id, "p");
+                  setPickUPoint({
+                    latitude: targetAdd.latitude,
+                    longitude: targetAdd.longitude,
+                  });
+                  setRegion({
+                    latitude: targetAdd.latitude,
+                    longitude: targetAdd.longitude,
+                    latitudeDelta: 0.1922,
+                    longitudeDelta: 0.0421,
+                  });
+                }}
+              />
+              <AppText style={[{ color: colors.danger }, styles.mb32]}>
+                {errors.pickUpAddress}
+              </AppText>
+              <AppTextInput
+                white
+                editable={!loadingLatLong}
+                placeholder='Where are you delivering to?'
+                style={{ paddingHorizontal: 10 }}
+                Icon={
+                  <FontAwesome5
+                    name='angle-right'
+                    size={20}
+                    color={colors.grey}
+                  />
+                }
+                onChangeText={(value) => {
+                  handleChange("deliveryAddress")(value);
+                  handleChange("deliveryAddressPlaceId")("43.2");
+                  handleChange("to")(value);
+                  getPredictions(value);
+                }}
+                onFocus={() => {
+                  setShowToSuggestions(true);
+                  setShowFromSuggestions(false);
+                }}
+                value={values.deliveryAddress}
+                autoCapitalize='none'
+              />
+              <AutoCompleteBox
+                show={showToSuggestions}
+                closePanel={closeAllSuggest}
+                results={predictions?.map((i) => {
+                  return {
+                    name: i.name,
+                    formatted_address: i.formatted_address,
+                  };
+                })}
+                onPressResult={(value) => {
+                  setDeliveryAddress(value);
+                  handleChange("to")(value);
+                  const targetAdd = predictions.find(
+                    (i) => i.formatted_address === value
+                  );
+                  handleChange("deliveryAddress")(`${targetAdd.name} ${value}`);
+                  handleChange("deliveryAddressPlaceId")(targetAdd.place_id);
+                  setDeliveryPoint({
+                    latitude: targetAdd.latitude,
+                    longitude: targetAdd.longitude,
+                  });
+                  setRegion({
+                    latitude: targetAdd.latitude,
+                    longitude: targetAdd.longitude,
+                    latitudeDelta: 0.1922,
+                    longitudeDelta: 0.0421,
+                  });
+                }}
+              />
+              <AppText style={[{ color: colors.danger }, styles.mb32]}>
+                {errors.deliveryAddress}
+              </AppText>
             </View>
-            <AppTextInput
-              editable={!loadingLatLong}
-              white
-              placeholder='Where are you picking from?'
-              style={{ paddingHorizontal: 10 }}
-              Icon={
-                <FontAwesome5
-                  name='angle-right'
-                  size={20}
-                  color={colors.grey}
-                />
-              }
-              onChangeText={async (value) => {
-                handleChange("pickUpAddress")(value);
-                handleChange("pickUpAddressPlaceId")("23.3");
-                handleChange("from")(value);
-
-                getPredictions(value);
-              }}
-              onBlur={handleBlur("pickUpAddress")}
-              autoCapitalize='none'
-              onFocus={() => {
-                setShowToSuggestions(false);
-                setShowFromSuggestions(true);
-              }}
-              value={values.pickUpAddress}
-            />
-            <AutoCompleteBox
-              show={showFromSuggestions}
-              closePanel={closeAllSuggest}
-              results={predictions?.map((i) => {
-                return i.description;
-              })}
-              onPressResult={(value) => {
-                handleChange("pickUpAddress")(value);
-                setPickUpAddress(value);
-                handleChange("from")(value);
-                const targetAdd = predictions.find(
-                  (i) => i.description === value
-                );
-
-                handleChange("pickUpAddressPlaceId")(targetAdd.place_id);
-                getLatLong(targetAdd.place_id, "p");
-              }}
-            />
-            <AppText style={[{ color: colors.danger }, styles.mb32]}>
-              {errors.pickUpAddress}
-            </AppText>
-            <AppTextInput
-              white
-              editable={!loadingLatLong}
-              placeholder='Where are you delivering to?'
-              style={{ paddingHorizontal: 10 }}
-              Icon={
-                <FontAwesome5
-                  name='angle-right'
-                  size={20}
-                  color={colors.grey}
-                />
-              }
-              onChangeText={(value) => {
-                handleChange("deliveryAddress")(value);
-                handleChange("deliveryAddressPlaceId")("43.2");
-                handleChange("to")(value);
-                getPredictions(value);
-              }}
-              onFocus={() => {
-                setShowToSuggestions(true);
-                setShowFromSuggestions(false);
-              }}
-              value={values.deliveryAddress}
-              autoCapitalize='none'
-            />
-            <AutoCompleteBox
-              show={showToSuggestions}
-              closePanel={closeAllSuggest}
-              results={predictions?.map((i) => {
-                return i.description;
-              })}
-              onPressResult={(value) => {
-                handleChange("deliveryAddress")(value);
-                setDeliveryAddress(value);
-                handleChange("to")(value);
-                const targetAdd = predictions.find(
-                  (i) => i.description === value
-                );
-                handleChange("deliveryAddressPlaceId")(targetAdd.place_id);
-                getLatLong(targetAdd.place_id, "d");
-              }}
-            />
-            <AppText style={[{ color: colors.danger }, styles.mb32]}>
-              {errors.deliveryAddress}
-            </AppText>
-          </View>
-          <View style={styles.mapBox}>
-            <MapView
-              region={region}
-              style={styles.map}
-              // showsTraffic={true}
-              // showsCompass={true}
-              onRegionChange={() => setRegion(region)}
-              loadingEnabled={true}
-              showsUserLocation={true}>
-              {pickUPoint && deliveryPoint && (
-                <MapViewDirections
-                  origin={{ ...pickUPoint }}
-                  destination={{ ...deliveryPoint }}
-                  apikey='AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y'
-                  mode='DRIVING'
-                  timePrecision='now'
-                  strokeWidth={3}
-                  strokeColor='hotpink'
-                  tappable
-                  geodesic
-                  onError={() => {
-                    showToast(
-                      "This route is plied by Airlines. We don't deliver by Air."
-                    );
-                  }}
-                />
-              )}
-              {deliveryPoint && (
-                <Marker
-                  coordinate={deliveryPoint}
-                  title='Delivery Point'
-                  description={deliveryAddress}
-                  pinColor={colors.primary}>
-                  <Ionicons name='location' size={25} color={colors.primary} />
-                </Marker>
-              )}
-              {pickUPoint && (
-                <Marker
-                  coordinate={pickUPoint}
-                  title='Pick Up Point'
-                  description={pickUpAddress}
-                  pinColor={colors.primary}>
-                  <Ionicons name='location' size={25} color={colors.primary} />
-                </Marker>
-              )}
-            </MapView>
-          </View>
+            <View style={styles.mapBox}>
+              <MapView
+                region={region}
+                style={styles.map}
+                // showsTraffic={true}
+                // showsCompass={true}
+                onRegionChange={() => setRegion(region)}
+                loadingEnabled={true}
+                showsUserLocation={true}>
+                {pickUPoint && deliveryPoint && (
+                  <MapViewDirections
+                    lineDashPattern={[0]}
+                    origin={{ ...pickUPoint }}
+                    destination={{ ...deliveryPoint }}
+                    apikey='AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y'
+                    mode='DRIVING'
+                    timePrecision='now'
+                    strokeWidth={3}
+                    strokeColor='hotpink'
+                    tappable
+                    geodesic
+                    onError={(errorMessage) => {
+                      showToast(
+                        "We cannot deliver to this destination by transit."
+                      );
+                    }}
+                  />
+                )}
+                {deliveryPoint && (
+                  <Marker
+                    coordinate={deliveryPoint}
+                    title='Delivery Point'
+                    description={deliveryAddress}
+                    pinColor={colors.primary}>
+                    <Ionicons
+                      name='location'
+                      size={25}
+                      color={colors.primary}
+                    />
+                  </Marker>
+                )}
+                {pickUPoint && (
+                  <Marker
+                    coordinate={pickUPoint}
+                    title='Pick Up Point'
+                    description={pickUpAddress}
+                    pinColor={colors.primary}>
+                    <Ionicons
+                      name='location'
+                      size={25}
+                      color={colors.primary}
+                    />
+                  </Marker>
+                )}
+              </MapView>
+            </View>
+          </ScrollView>
 
           <View style={styles.button}>
             <AppButton
               title={
                 loadingLatLong ? (
-                  <ActivityIndicator animating={loadingLatLong} />
+                  <ActivityIndicator
+                    animating={loadingLatLong}
+                    color={colors.white}
+                    size='large'
+                  />
                 ) : (
                   "Done"
                 )
               }
               fullWidth
-              // onPress={() => props.navigation.navigate("AddPackageScreen")}
               onPress={handleSubmit}
               disabled={loadingLatLong}
             />
           </View>
+          {packages.length > 0 && (
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 20,
+                backgroundColor: colors.primary,
+                padding: 5,
+                borderRadius: 15,
+                paddingHorizontal: 10,
+              }}
+              onPress={() => {
+                const removeLastItem = packages;
+                removeLastItem.pop();
+                setPackages(removeLastItem);
+                props.navigation.navigate("PackageSummaryScreenNew");
+              }}>
+              <AppText size='xx-small'>Go back to summary</AppText>
+            </TouchableOpacity>
+          )}
 
           <AppModal isVisble={differentRegionError}>
             <View style={styles.modalBox}>
@@ -497,7 +712,7 @@ function EnterLocationScreen(props) {
             toggleModal={() => setOpenJourneyTypePanel(false)}
             onContinue={(r) => setJourneyType(r)}
           />
-        </View>
+        </KeyboardAvoidingView>
       )}
     </Formik>
   );
@@ -555,7 +770,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   suggestionsBox: {
-    maxHeight: 200,
+    maxHeight: 300,
     width: "100%",
     backgroundColor: colors.white,
     borderRadius: 10,

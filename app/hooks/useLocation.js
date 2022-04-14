@@ -7,14 +7,14 @@ import React, { useContext, useEffect, useState } from "react";
 import placeApi from "../api/places";
 import authApi from "../api/auth";
 import socket from "../api/socket";
-import AuthContext from "../contexts/auth";
-import useAuth from "../auth/useAuth";
-import { get } from "../utility/cache";
 import storage from "../auth/storage";
+import showToast from "../config/showToast";
 
 const useLocation = () => {
+  let locationSubscription = null;
+  let mounted = true;
+
   const [errorMsg, setErrorMsg] = useState(null);
-  const [countries, setCountries] = useState([]);
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState(null);
   const [user, setUser] = useState(null);
@@ -22,37 +22,57 @@ const useLocation = () => {
   useEffect(() => {
     (async () => {
       try {
+        await Location.setGoogleApiKey(
+          "AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y"
+        );
+
         let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === "granted") {
+          getRecentPos();
+        }
         if (status !== "granted") {
-          setErrorMsg("Permission to access location was denied");
+          showToast("Permission to access location was denied");
+          if (mounted) {
+            setErrorMsg("Permission to access location was denied");
+          }
           return;
         }
       } catch (error) {}
     })();
+
+    return () => {
+      locationSubscription?.remove();
+    };
   }, []);
 
   useEffect(() => {
     (async () => {
       const userData = await storage.getUser();
-      setUser(userData);
+      if (mounted) {
+        setUser(userData);
+      }
       const data = await getLocation();
-      setLocation(data);
-      await Location.setGoogleApiKey("AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y");
+      if (mounted) {
+        setLocation(data);
+      }
 
       const addressData = await Location.reverseGeocodeAsync({
-        latitude: data.coords.latitude,
-        longitude: data.coords.longitude,
-      }).catch((error) => {
-        // console.log("error", error);
-      });
-      setAddress(addressData && addressData[0]);
+        latitude: data?.coords?.latitude,
+        longitude: data?.coords?.longitude,
+      }).catch((error) => {});
+      if (mounted) {
+        setAddress(addressData && addressData[0]);
+      }
       await updateLastKnownLocation({
         location: {
-          latitude: data.coords.latitude,
-          longitude: data.coords.longitude,
+          latitude: data?.coords?.latitude,
+          longitude: data?.coords?.longitude,
         },
       });
     })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const updateLastKnownLocation = async (data) => {
@@ -64,34 +84,64 @@ const useLocation = () => {
   };
 
   const getLocation = async () => {
-    const location = await Location.getCurrentPositionAsync({});
+    let location = null;
+    try {
+      location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Highest,
+        maximumAge: 10000,
+        timeout: 5000,
+      });
+    } catch (error) {
+      showToast("Enable Location to use Location services.");
+    }
+    return location;
+  };
+  const getLastLocation = async () => {
+    let location = null;
+    try {
+      location = await Location.getLastKnownPositionAsync({
+        accuracy: Location.Accuracy.Highest,
+        maximumAge: 10000,
+        timeout: 5000,
+      });
+    } catch (error) {
+      showToast("Enable Location to use Location services.");
+    }
     return location;
   };
 
-  Location.watchPositionAsync(
-    { accuracy: Location.Accuracy.High },
-    async (location) => {
-      // console.log("Location has changed", {
-      //   latitude: location?.coords?.latitude,
-      //   longitude: location?.coords?.longitude,
-      // });
-      if (location && user) {
-        socket.emit("driver:location:update", {
-          location: {
-            latitude: location?.coords?.latitude,
-            longitude: location?.coords?.longitude,
-          },
-          userId: user?._id,
-        });
-        await updateLastKnownLocation({
-          location: {
-            latitude: location?.coords?.latitude,
-            longitude: location?.coords?.longitude,
-          },
-        });
+  const getAddressFromLatLong = async (lat, long) => {
+    const addressData = await Location.reverseGeocodeAsync({
+      latitude: lat,
+      longitude: long,
+    }).catch((error) => {});
+
+    const location = addressData && addressData[0];
+    return location;
+  };
+
+  const getRecentPos = async () => {
+    locationSubscription = await Location.watchPositionAsync(
+      { accuracy: Location.Accuracy.High },
+      async (location) => {
+        if (location && user) {
+          socket.emit("driver:location:update", {
+            location: {
+              latitude: location?.coords?.latitude,
+              longitude: location?.coords?.longitude,
+            },
+            userId: user?._id,
+          });
+          await updateLastKnownLocation({
+            location: {
+              latitude: location?.coords?.latitude,
+              longitude: location?.coords?.longitude,
+            },
+          });
+        }
       }
-    }
-  );
+    );
+  };
 
   // const TASK_FETCH_LOCATION = "TASK_FETCH_LOCATION";
 
@@ -107,7 +157,6 @@ const useLocation = () => {
   //     let lat = locations[0].coords.latitude;
   //     let long = locations[0].coords.longitude;
 
-  //     console.log(`${new Date(Date.now()).toLocaleString()}: ${lat},${long}`);
   //     socket.emit("driver:location", { ...locations[0] });
   //   }
   // });
@@ -134,6 +183,12 @@ const useLocation = () => {
   //   }
   // });
 
-  return { getLocation, location, address };
+  return {
+    getLocation,
+    location,
+    address,
+    getAddressFromLatLong,
+    getLastLocation,
+  };
 };
 export default useLocation;

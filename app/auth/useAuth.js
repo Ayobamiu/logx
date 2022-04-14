@@ -18,6 +18,7 @@ const useAuth = () => {
   const [sendingCode, setSendingCode] = useState(false);
   const { mode, setMode } = useContext(ModeContext);
   const { isOnline, setIsOnline } = useContext(OnlineStatusContext);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const changeUserOnlineStatus = async (isOnline) => {
     await store("user:onlineStatus", isOnline);
@@ -62,18 +63,20 @@ const useAuth = () => {
     const code = Math.floor(100000 + Math.random() * 900000);
 
     setSendingCode(true);
+    setSendingTripCode(true);
     const result = await authApi.sendEndTripOTP({
       code,
       packageId,
       tripId,
     });
-
     if (result.data && result.data.error) {
       setSendingCode(false);
+      setSendingTripCode(false);
       return showToast("Error, try again!");
     }
     if (result.error) {
       setSendingCode(false);
+      setSendingTripCode(false);
       return showToast("Error, try again!");
     }
     //send it
@@ -139,10 +142,18 @@ const useAuth = () => {
     return code;
   };
   const logOut = async () => {
-    authStorage.removeToken();
-    setTimeout(() => {
-      setUser(null);
-    }, 200);
+    setLoggingOut(true);
+    const { error, data } = await authApi.logOut();
+    if (error) {
+      setLoggingOut(false);
+      showToast("Enable to logout, Try again!");
+    } else {
+      setLoggingOut(false);
+      authStorage.removeToken();
+      setTimeout(() => {
+        setUser(null);
+      }, 200);
+    }
   };
   return {
     logIn,
@@ -158,6 +169,7 @@ const useAuth = () => {
     changeUserOnlineStatus,
     saveAndSendEndTripCode,
     saveAndSendResetPassworCode,
+    loggingOut,
   };
 };
 export default useAuth;

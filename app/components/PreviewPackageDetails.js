@@ -1,3 +1,5 @@
+/** @format */
+
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Feather, AntDesign, Fontisto } from "@expo/vector-icons";
@@ -10,7 +12,7 @@ function PreviewPackageDetails({ item }) {
       <View>
         <View style={[{ flexDirection: "row" }, styles.mv8]}>
           <Fontisto
-            name="map-marker-alt"
+            name='map-marker-alt'
             color={colors.primary}
             size={10}
             style={[styles.mr16, styles.mt4]}
@@ -22,7 +24,7 @@ function PreviewPackageDetails({ item }) {
         </View>
         <View style={[{ flexDirection: "row" }, styles.mb8]}>
           <Fontisto
-            name="circle-o-notch"
+            name='circle-o-notch'
             color={colors.primary}
             size={10}
             style={[styles.mr16, styles.mt4]}
@@ -33,12 +35,12 @@ function PreviewPackageDetails({ item }) {
           </View>
         </View>
         <View style={[styles.row, { justifyContent: "space-between" }]}>
-          <View style={{ flex: 0.5, flexShrink: 0 }}>
+          {/* <View style={{ flex: 0.5, flexShrink: 0 }}>
             <AppText style={[styles.light, styles.mb8]}>
               Package Category
             </AppText>
             <AppText>Clothes, Paper</AppText>
-          </View>
+          </View> */}
           <View style={{ flex: 0.5, flexShrink: 0 }}>
             <AppText style={[styles.light, styles.mb8]}>Date and time</AppText>
             <AppText>

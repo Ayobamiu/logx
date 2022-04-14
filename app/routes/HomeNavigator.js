@@ -28,7 +28,6 @@ import SafetyAndSecurityScreen from "../screens/SafetyAndSecurityScreen";
 import ModeContext from "../contexts/mode";
 import CopyTripCodeScreen from "../screens/CopyTripCodeScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
-import WebhookPaymentScreen from "../screens/WebhookPaymentScreen";
 import PaymentHistoryScreen from "../screens/PaymentHistoryScreen";
 import WithdrawalScreen from "../screens/WithdrawalScreen";
 import AddBankRecordScreen from "../screens/AddBankRecordScreen";
@@ -38,6 +37,9 @@ import UploadNINScreen from "../screens/UploadNINScreen";
 import VerifyLicencse from "../screens/VerifyLicencse";
 import VerifyNID from "../screens/VerifyNID";
 import VerifyVID from "../screens/VerifyVID";
+import TransactionDetails from "../screens/TransactionDetails";
+import Tracker from "../screens/TrackerScreen";
+import Trackee from "../screens/TestLocation";
 
 const Stack = createStackNavigator();
 
@@ -45,11 +47,20 @@ function HomeNavigator() {
   const { user } = useContext(AuthContext);
 
   const { mode } = useContext(ModeContext);
+  const aboutMeVerified =
+    user.firstName && user.lastName && user.phoneNumber && user.deliveryType;
+
+  const idVerified =
+    user.driversLicenseVerificationStatus === "success" ||
+    user.ninSlipVerificationStatus === "success" ||
+    user.internationalPassportVerificationStatus === "success" ||
+    user.nationalIdVerificationStatus === "success" ||
+    user.votersCardVerificationStatus === "success";
   let verified = 0;
-  if (user.verificationPhoto) {
+  if (aboutMeVerified) {
     verified += 1;
   }
-  if (user.nationalId || user.votersCard || user.internationalPassport) {
+  if (idVerified) {
     verified += 1;
   }
   return (
@@ -73,12 +84,22 @@ function HomeNavigator() {
             : DriverSettingsScreen
         }
         options={{
-          headerShown: mode === "driver" && verified < 2,
+          headerShown: false,
           headerStyle: {
             backgroundColor: colors.white,
             elevation: 0,
           },
         }}
+      />
+      <Stack.Screen
+        name='Trackee'
+        component={Trackee}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name='Tracker'
+        component={Tracker}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name='DeliveryMerchantHomepage'
@@ -280,6 +301,8 @@ function HomeNavigator() {
             backgroundColor: colors.white,
             elevation: 0,
           },
+          title: "",
+          headerShown: false,
         }}
       />
       <Stack.Screen
@@ -326,6 +349,13 @@ function HomeNavigator() {
         }}
       />
       <Stack.Screen
+        name='TransactionDetails'
+        component={TransactionDetails}
+        options={{
+          title: "Transaction Details",
+        }}
+      />
+      <Stack.Screen
         name='CopyTripCodeScreen'
         component={CopyTripCodeScreen}
         options={{
@@ -339,13 +369,7 @@ function HomeNavigator() {
           title: "",
         }}
       />
-      <Stack.Screen
-        name='WebhookPaymentScreen'
-        component={WebhookPaymentScreen}
-        options={{
-          title: "",
-        }}
-      />
+
       <Stack.Screen
         name='PaymentHistoryScreen'
         component={PaymentHistoryScreen}

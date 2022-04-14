@@ -12,7 +12,7 @@ import {
   Linking,
   ActivityIndicator,
 } from "react-native";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5, FontAwesome } from "@expo/vector-icons";
 import colors from "../config/colors";
 import AppText from "../components/AppText";
 import AppButton from "../components/AppButton";
@@ -20,45 +20,89 @@ import reviewApi from "../api/reviews";
 import ReviewAndRatingItem from "../components/ReviewAndRatingItem";
 import auth from "../api/auth";
 import AuthContext from "../contexts/auth";
+import placesApi from "../api/places";
+
+import AppUserAvatar from "../components/AppUserAvatar";
+import showToast from "../config/showToast";
+import useLocation from "../hooks/useLocation";
 
 function DriverProfileScreen(props) {
+  let mounted = true;
   const [showing, setShowing] = useState("about");
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState(false);
+  const [address, setAddress] = useState(null);
+  const { getAddressFromLatLong } = useLocation();
   const [profile, setProfile] = useState(null);
   const ratings = [1, 2, 3, 4, 5];
 
   const { user } = useContext(AuthContext);
   const userId = props.route?.params?.userId;
-  console.log("userId", userId);
+  const trip = props.route?.params?.trip;
 
+  const inviteDriver = async (userId) => {
+    if (mounted) {
+      setSendingInvite(true);
+    }
+
+    const { data, error } = await placesApi.inviteDriverToTrip(
+      trip?._id,
+      userId
+    );
+    if (!error && data) {
+      showToast("Invite Sent");
+      props.navigation.goBack();
+    }
+    if (mounted) {
+      setSendingInvite(false);
+    }
+  };
   const getUserProfile = async (userId) => {
-    setLoadingProfile(true);
+    if (mounted) {
+      setLoadingProfile(true);
+    }
 
     const { data, error } = await auth.getUserProfile(userId);
     if (!error && data) {
-      setProfile(data);
+      if (mounted) {
+        setProfile(data);
+      }
     }
-    setLoadingProfile(false);
+    if (mounted) {
+      setLoadingProfile(false);
+    }
   };
   const getMyReviews = async () => {
-    setLoadingReviews(true);
+    if (mounted) {
+      setLoadingReviews(true);
+    }
 
     const { data, error } = await reviewApi.getMyReviews();
     if (!error && data) {
-      setReviews(data);
+      if (mounted) {
+        setReviews(data);
+      }
     }
-    setLoadingReviews(false);
+    if (mounted) {
+      setLoadingReviews(false);
+    }
   };
   const getUserReviews = async (userId) => {
-    setLoadingReviews(true);
+    if (mounted) {
+      setLoadingReviews(true);
+    }
 
     const { data, error } = await reviewApi.getUserReviews(userId);
     if (!error && data) {
-      setReviews(data);
+      if (mounted) {
+        setReviews(data);
+      }
     }
-    setLoadingReviews(false);
+    if (mounted) {
+      setLoadingReviews(false);
+    }
   };
   useEffect(() => {
     if (userId) {
@@ -68,7 +112,22 @@ function DriverProfileScreen(props) {
       getMyReviews();
       getUserProfile(user._id);
     }
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+  useEffect(() => {
+    (async () => {
+      const data = await getAddressFromLatLong(
+        profile?.location?.latitude,
+        profile?.location?.longitude
+      );
+      if (mounted) {
+        setAddress(data);
+      }
+    })();
+  }, [profile]);
 
   const sum = profile?.ratings?.reduce((a, b) => a + b, 0);
   const userRating = sum / profile?.ratings?.length || 0;
@@ -89,6 +148,20 @@ function DriverProfileScreen(props) {
           <AppText style={[styles.unselectedText]}>Name</AppText>
           <AppText size='16' style={[styles.black]}>
             {profile?.firstName} {profile?.lastName}
+          </AppText>
+        </View>
+        <View style={styles.mt10}>
+          <AppText style={[styles.unselectedText]}>Phone</AppText>
+          <AppText size='16' style={[styles.black]}>
+            {profile?.phoneNumber}
+          </AppText>
+        </View>
+        <View style={styles.mt10}>
+          <AppText style={[styles.unselectedText]}>
+            Location of operation
+          </AppText>
+          <AppText size='16' style={[styles.black]}>
+            {address?.region}, {address?.country}
           </AppText>
         </View>
         <View style={styles.mt10}>
@@ -172,7 +245,7 @@ function DriverProfileScreen(props) {
                 color={colors.primary}
               />
             )}
-            <AppText>Your reviews will show here</AppText>
+            <AppText>Reviews will show here</AppText>
           </View>
         }
       />
@@ -198,15 +271,12 @@ function DriverProfileScreen(props) {
         <View style={styles.blue}>
           <Ionicons name='image' color={colors.black} size={50} />
         </View>
-        <View style={styles.white}>
-          <ImageBackground
-            style={styles.avatar}
-            borderRadius={85 / 2}
-            source={{ uri: profile?.profilePhoto }}>
-            {!profile?.profilePhoto && (
-              <FontAwesome5 name='user' color={colors.secondary} size={35} />
-            )}
-          </ImageBackground>
+        <View style={[styles.white, { alignItems: "center", paddingTop: 20 }]}>
+          <AppUserAvatar
+            color={colors.secondary}
+            profilePhoto={profile?.profilePhoto}
+            backgroundColor={colors.greyBg}
+          />
           <View style={styles.column}>
             {loadingProfile && (
               <ActivityIndicator
@@ -233,14 +303,10 @@ function DriverProfileScreen(props) {
             <View style={[styles.row, styles.mt10]}>
               <TouchableOpacity
                 onPress={() => {
-                  Linking.openURL(`mailto: ${profile?.email}`);
+                  Linking.openURL(`sms: ${profile?.phoneNumber}`);
                 }}
                 style={styles.iconWrap}>
-                <Ionicons
-                  name='md-send-sharp'
-                  color={colors.danger}
-                  size={15}
-                />
+                <FontAwesome name='envelope' size={15} color={colors.danger} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.iconWrap}
@@ -289,13 +355,24 @@ function DriverProfileScreen(props) {
         <AboutMe />
         <Reviews />
       </View>
-      {profile?._id !== user._id && (
+      {profile?._id !== user._id && trip && (
         <View style={[styles.mtAuto]}>
           <AppButton
-            title='Connect with driver'
+            title={
+              sendingInvite ? (
+                <ActivityIndicator
+                  animating={sendingInvite}
+                  color={colors.white}
+                />
+              ) : (
+                "Connect with driver"
+              )
+            }
             fullWidth
+            disabled={sendingInvite}
             onPress={() => {
-              props.navigation.navigate("TransactionDetailsScreen");
+              // props.navigation.navigate("TransactionDetailsScreen");
+              inviteDriver(profile?._id);
             }}
           />
         </View>
@@ -348,7 +425,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
 
     alignItems: "center",
-    marginTop: 85 / 2,
+    marginTop: 10,
   },
   container: {
     flex: 1,

@@ -83,11 +83,47 @@ const acceptRejectTrip = async (tripBidId, formData) => {
   }
   return { error: err, data };
 };
+const joinTrip = async (tripId) => {
+  const token = await storage.getToken();
+
+  let data = {};
+  let err = false;
+  try {
+    const result = await apiClientNoCache.patch(
+      `/trip/join-trip/${tripId}`,
+      {},
+      {
+        headers: {
+          Authorization: token,
+        },
+      }
+    );
+    data = result?.data?.error ? [] : result.data;
+  } catch (error) {
+    if (error !== "") {
+      err = true;
+    }
+  }
+  return { error: err, data };
+};
 const getTripBids = async (tripId) => {
   let data = {};
   let err = false;
   try {
     const result = await apiClientNoCache.get(`/trip-bid/${tripId}`);
+    data = result?.data?.error ? [] : result.data;
+  } catch (error) {
+    if (error !== "") {
+      err = true;
+    }
+  }
+  return { error: err, data };
+};
+const getDriverLocation = async (tripId) => {
+  let data = {};
+  let err = false;
+  try {
+    const result = await apiClientNoCache.get(`/trip/driver/${tripId}`);
     data = result?.data?.error ? [] : result.data;
   } catch (error) {
     if (error !== "") {
@@ -236,6 +272,21 @@ const getAvailableTrips = async (latitude, longitude) => {
   }
   return { error: err, data };
 };
+const getDriversAround = async (tripId) => {
+  let data = {};
+  let err = false;
+  try {
+    const result = await apiClientNoCache.get(
+      `/trip/available-drivers/${tripId}`
+    );
+    data = result?.data?.error ? [] : result?.data;
+  } catch (error) {
+    if (error !== "") {
+      err = true;
+    }
+  }
+  return { error: err, data };
+};
 
 const placePrediction = (searchQuery) =>
   apiClientNoCache.post("/trip/predictions", { searchQuery });
@@ -258,4 +309,7 @@ export default {
   driverAcceptTrip,
   changeTripPackageStatus,
   inviteDriverToTrip,
+  getDriverLocation,
+  getDriversAround,
+  joinTrip,
 };

@@ -18,25 +18,44 @@ import placesApi from "../api/places";
 import DriverRequestPreview from "../components/DriverRequestPreview";
 import socket from "../api/socket";
 import useTrips from "../hooks/useTrips";
+import AuthContext from "../contexts/auth";
 
 function MarketScreen(props) {
+  let mounted = true;
   const { tripRequests, setTripRequests } = useContext(TripRequestsContext);
+  const { user, setUser } = useContext(AuthContext);
 
   const { loadTrips, loadingtrips } = useTrips();
 
   const [refreshing, setRefreshing] = useState(false);
 
-  // socket.on("trip:created", () => {
-  //   loadTrips();
-  // });
-  // useEffect(() => {
-  //   loadTrips();
-  // }, []);
+  socket.on("trip:created", () => {
+    loadTrips(); //check
+  });
+  socket.on("trip:updated:users", (data) => {
+    if (data.receivers) {
+      if (data.receivers.includes(user._id)) {
+        if (mounted) {
+          loadTrips(); //check
+        }
+      }
+    }
+  });
+  useEffect(() => {
+    loadTrips(); //check
+    return () => {
+      mounted = false;
+    };
+  }, []);
   const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
+    if (mounted) {
+      setRefreshing(true);
+    }
     (async () => {
-      await loadTrips();
-      setRefreshing(false);
+      await loadTrips(); //check
+      if (mounted) {
+        setRefreshing(false);
+      }
     })();
   }, []);
 

@@ -44,7 +44,7 @@ function AccontScreen(props) {
     setLoading(true);
     const result = await authApi.updateProfile(data);
 
-    if (result.data.error) {
+    if (result.data && result.data.error) {
       setLoading(false);
       return showToast(result.data.message);
     }
@@ -77,13 +77,18 @@ function AccontScreen(props) {
                 allowsEditing: true,
                 aspect: [4, 3],
                 quality: 1,
-              });
+              }).catch((err) => {});
+              if (!result?.cancelled) {
+                let localUri = result.uri;
+                let filename = localUri.split("/").pop();
 
-              if (!result.cancelled) {
+                let match = /\.(\w+)$/.exec(filename);
+                let type = match ? `image/${match[1]}` : `image`;
                 const formData = new FormData();
                 formData.append("profilePhoto", {
-                  ...result,
-                  name: `image${Math.random() * 10000}.jpg`,
+                  uri: localUri,
+                  name: filename,
+                  type,
                 });
 
                 handleUpdateProfileMedia(formData);
@@ -94,16 +99,23 @@ function AccontScreen(props) {
       );
     } else {
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 1,
-      });
+      }).catch((err) => {});
+
       if (!result.cancelled) {
+        let localUri = result.uri;
+        let filename = localUri.split("/").pop();
+
+        let match = /\.(\w+)$/.exec(filename);
+        let type = match ? `image/${match[1]}` : `image`;
         const formData = new FormData();
         formData.append("profilePhoto", {
-          ...result,
-          name: `image${Math.random() * 10000}.jpg`,
+          uri: localUri,
+          name: filename,
+          type,
         });
 
         handleUpdateProfileMedia(formData);
@@ -116,10 +128,10 @@ function AccontScreen(props) {
 
     setLoading(false);
     if (result.data && result.data.error) {
-      return showToast(result.data.message);
+      return showToast("Error Updating Profile!");
     }
     if (result.error) {
-      return showToast(result.message);
+      return showToast("Error Updating Profile!");
     }
     if (result.data) {
       setUser(result.data);
@@ -142,26 +154,46 @@ function AccontScreen(props) {
         {loading && (
           <ActivityIndicator animating={loading} color={colors.primary} />
         )}
-        <ImageBackground
-          style={styles.avatar}
-          source={{ uri: user.profilePhoto }}
-          borderRadius={93 / 2}>
-          {!user.profilePhoto && (
-            <Feather color={colors.white} size={(93 * 2) / 3} name='user' />
-          )}
-          <Pressable
-            style={[
-              styles.avatarSmall,
-              { position: "absolute", top: 0, right: 0 },
-            ]}
-            onPress={updateProfilePhoto}>
-            <Feather
-              color={colors.secondary}
-              size={(20 * 2) / 3}
-              name='edit-3'
-            />
-          </Pressable>
-        </ImageBackground>
+        {!user.profilePhoto || user.profilePhoto === "" ? (
+          <View style={styles.avatar}>
+            {!user.profilePhoto && (
+              <Feather color={colors.white} size={(93 * 2) / 3} name='user' />
+            )}
+            <Pressable
+              style={[
+                styles.avatarSmall,
+                { position: "absolute", top: 0, right: 0 },
+              ]}
+              onPress={updateProfilePhoto}>
+              <Feather
+                color={colors.secondary}
+                size={(20 * 2) / 3}
+                name='edit-3'
+              />
+            </Pressable>
+          </View>
+        ) : (
+          <ImageBackground
+            style={styles.avatar}
+            source={{ uri: user.profilePhoto }}
+            borderRadius={93 / 2}>
+            {!user.profilePhoto && (
+              <Feather color={colors.white} size={(93 * 2) / 3} name='user' />
+            )}
+            <Pressable
+              style={[
+                styles.avatarSmall,
+                { position: "absolute", top: 0, right: 0 },
+              ]}
+              onPress={updateProfilePhoto}>
+              <Feather
+                color={colors.secondary}
+                size={(20 * 2) / 3}
+                name='edit-3'
+              />
+            </Pressable>
+          </ImageBackground>
+        )}
 
         <AppTextInput
           title='First Name'
@@ -248,7 +280,14 @@ function AccontScreen(props) {
           onPress={() => {
             // showToast("Nothing happened!");
 
-            if (firstName || lastName || dob || phoneNumber || email) {
+            if (
+              firstName ||
+              lastName ||
+              dob ||
+              phoneNumber ||
+              email ||
+              homeAddress
+            ) {
               const data = {};
               if (firstName) {
                 data.firstName = firstName;
@@ -310,6 +349,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: colors.white,
     paddingBottom: 32,
+    paddingTop: 0,
   },
   fs18: { fontSize: 18 },
   light: { color: colors.light },

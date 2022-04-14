@@ -9,6 +9,7 @@ import {
   Pressable,
   ImageBackground,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import AppText from "../components/AppText";
 import colors from "../config/colors";
@@ -22,9 +23,14 @@ import transactionAPIs from "../api/transaction";
 import showToast from "../config/showToast";
 import TransactionContext from "../contexts/transactions";
 import PayWithFlutterWave from "../components/PayWithFlutterWave";
+import AppUserAvatar from "../components/AppUserAvatar";
+import authApi from "../api/auth";
+import useAuth from "../auth/useAuth";
 
 function MyEarningsScreen(props) {
-  const { user } = useContext(AuthContext);
+  const { user, setUser } = useContext(AuthContext);
+  const { changeUserMode, saveUser } = useAuth();
+
   const [openPayment, setOpenPayment] = useState(false);
   const { transactions, setTransactions } = useContext(TransactionContext);
 
@@ -38,8 +44,27 @@ function MyEarningsScreen(props) {
       setTransactions(data);
     }
   };
+  const handleUpdateProfile = async (data) => {
+    const result = await authApi.updateProfile(data);
+
+    if (result.error) {
+      return showToast("Profile not up to date, Reload");
+    }
+    setUser(result.data);
+    await saveUser(result.data);
+  };
   useEffect(() => {
     getTransactions();
+  }, []);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    (async () => {
+      await getTransactions();
+      handleUpdateProfile({});
+
+      setRefreshing(false);
+    })();
   }, []);
 
   const CardDesign = ({ empty = false }) => {
@@ -79,17 +104,26 @@ function MyEarningsScreen(props) {
       </View>
     );
   };
-  const PaymentHistory = ({ imageUrl, name, transCode, amount, type }) => {
+  const PaymentHistory = ({
+    imageUrl,
+    name,
+    transCode,
+    amount,
+    type,
+    item,
+  }) => {
     return (
-      <View style={styles.paycard}>
-        <ImageBackground
-          source={{ uri: imageUrl }}
-          style={styles.bigAvatar}
-          borderRadius={32 / 2}>
-          {!imageUrl && (
-            <Feather name='user' size={(32 * 2) / 3} color={colors.black} />
-          )}
-        </ImageBackground>
+      <TouchableOpacity
+        onPress={() => {
+          props.navigation.navigate("TransactionDetails", item);
+        }}
+        style={styles.paycard}>
+        <AppUserAvatar
+          size='small'
+          color={colors.black}
+          profilePhoto={imageUrl}
+          backgroundColor={colors.greyBg}
+        />
         <View style={{ marginHorizontal: 10 }}>
           <AppText style={{ color: colors.black, fontWeight: "bold" }}>
             {name || "Anonymous"}
@@ -99,7 +133,7 @@ function MyEarningsScreen(props) {
         <AppText style={type === "plus" ? styles.plus : styles.minus}>
           &#8358;{Math.round(amount)}
         </AppText>
-      </View>
+      </TouchableOpacity>
     );
   };
   const [showBidModal, setShowBidModal] = useState(false);
@@ -110,12 +144,12 @@ function MyEarningsScreen(props) {
       </AppText>
       <View style={styles.yellowBox}>
         <AppText size='header'>
-          {user.availableBalance}
-          <AppText size='x-small' style={{ color: colors.white }}>
-            {" "}
-            NGN
-          </AppText>
+          &#8358;{Math.round(user.availableBalance)}
         </AppText>
+        {/* <AppText size='xx-small'>Ledger Balance</AppText>
+        <AppText size='xx-small'>
+          &#8358;{Math.round(user.ledgerBalance)}
+        </AppText> */}
         <View
           style={[
             {
@@ -178,6 +212,9 @@ function MyEarningsScreen(props) {
         data={transactions}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         renderItem={({ item }) => (
           <PaymentHistory
             name={
@@ -185,6 +222,7 @@ function MyEarningsScreen(props) {
             }
             transCode={item._id}
             amount={item.amount}
+            item={item}
             type={item.type}
             imageUrl={item?.payer?.profilePhoto}
           />

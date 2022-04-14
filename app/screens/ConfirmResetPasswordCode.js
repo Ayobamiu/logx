@@ -16,10 +16,16 @@ function ConfirmResetPasswordCode(props) {
   const { saveAndSendResetPassworCode, sendingCode } = useAuth();
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
       const code = await get("password:reset:code");
-      setCode(code);
+      if (mounted) {
+        setCode(code);
+      }
     })();
+    return () => {
+      mounted = false;
+    };
   }, []);
   return (
     <View style={styles.container}>

@@ -28,7 +28,8 @@ const useBanks = () => {
         },
         {
           headers: {
-            Authorization: "Bearer FLWSECK-8784009391a9c53cc089aed215c14dea-X",
+            Authorization:
+              "Bearer FLWSECK_TEST-f405da071aca4b9d683201fa235b9b3f-X",
           },
         }
       );
@@ -50,17 +51,25 @@ const useBanks = () => {
     }
     setLoading(false);
   };
-  const loadBanks = async () => {
-    setLoading(true);
+  const loadBanks = async (mounted) => {
+    if (mounted) {
+      setLoading(true);
+    }
     try {
       const result = await axios.get(
-        "https://api.ravepay.co/v2/banks/NG?public_key=FLWPUBK_TEST-5120f20f66db336ffc0f6131bcc49936-X"
+        "https://api.ravepay.co/v2/banks/NG?public_key=FLWPUBK-cb97fcca397253032055065ae719157c-X"
       );
-      setBanks(result.data.data.Banks);
+      if (mounted) {
+        setBanks(result.data.data.Banks);
+      }
     } catch (error) {
-      setError(true);
+      if (mounted) {
+        setError(true);
+      }
     }
-    setLoading(false);
+    if (mounted) {
+      setLoading(false);
+    }
   };
   const getBankRecords = async () => {
     const token = await storage.getToken();
@@ -104,9 +113,13 @@ const useBanks = () => {
     setLoading(false);
   };
   useEffect(() => {
+    let mounted = true;
     if (banks.length === 0) {
-      loadBanks();
+      loadBanks(mounted);
     }
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return {

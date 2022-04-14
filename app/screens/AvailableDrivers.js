@@ -21,24 +21,20 @@ import AppButton from "../components/AppButton";
 import MapLabel from "../components/MapLabel";
 import placesApi from "../api/places";
 import BidResponseItem from "../components/BidResponseItem";
-import { usersList } from "../api/socket";
+import socket, { usersList } from "../api/socket";
 import { getDistanceFromLatLonInKm } from "../utility/latLong";
 import MapComponent from "../components/MapComponent";
 import showToast from "../config/showToast";
+import AuthContext from "../contexts/auth";
 
 function AvailableDrivers(props) {
+  let mounted = true;
   const { getLocation, location } = useLocation();
-  const usersWithinDistance = usersList.map((i) => {
-    return {
-      ...i,
-      distance: getDistanceFromLatLonInKm(
-        location?.coords?.latitude,
-        location?.coords?.longitude,
-        i.latitude,
-        i.longitude
-      ),
-    };
-  });
+  const { user, setUser } = useContext(AuthContext);
+
+  const [loadingAvailableDrivers, setLoadingAvailableDrivers] = useState(false);
+  const [drivers, setDrivers] = useState([]);
+
   const [loadingTripBids, setLoadingTripBids] = useState(false);
   const [showBids, setShowBids] = useState(false);
   const [bids, setBids] = useState([]);
@@ -47,8 +43,8 @@ function AvailableDrivers(props) {
     loading: false,
     action: "",
   });
-  const [sendingInvite, setSendingInvite] = useState(false);
   const { trip, setTrip } = useContext(TripContext);
+
   const loadTriBids = async () => {
     setLoadingTripBids(true);
 
@@ -58,17 +54,21 @@ function AvailableDrivers(props) {
     }
     setLoadingTripBids(false);
   };
-  const inviteDriver = async (userId) => {
-    setSendingInvite(true);
-
-    const { data, error } = await placesApi.inviteDriverToTrip(
-      trip._id,
-      userId
-    );
-    if (!error && data) {
-      showToast("Invite Sent");
+  const getDriversAround = async () => {
+    //check
+    if (mounted) {
+      setLoadingAvailableDrivers(true);
     }
-    setSendingInvite(false);
+
+    const { data, error } = await placesApi.getDriversAround(trip._id);
+    if (!error && data) {
+      if (mounted) {
+        setDrivers(data);
+      }
+    }
+    if (mounted) {
+      setLoadingAvailableDrivers(false);
+    }
   };
 
   const acceptRejectBid = async (id, status) => {
@@ -92,6 +92,12 @@ function AvailableDrivers(props) {
 
   const [packageOne, setPackageOne] = useState(trip && trip.packages[0]);
 
+  //remove myself from the list
+  //filter only users within 15km of pickup point
+  const usersWithinDistance = drivers.filter(
+    (i) => i._id !== user._id && i.distance <= 20000
+  );
+
   const [region, setRegion] = useState({
     latitude: 8.9233587,
     longitude: -0.3674603,
@@ -101,18 +107,31 @@ function AvailableDrivers(props) {
 
   useEffect(() => {
     loadTriBids();
+    getDriversAround(); //check
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  socket.on("isonline:new", () => {
+    getDriversAround(); //check
+  });
 
   useEffect(() => {
     (async () => {
       const data = await getLocation();
-      setRegion({
-        latitude: data?.coords?.latitude,
-        longitude: data?.coords?.longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      });
+      if (mounted) {
+        setRegion({
+          latitude: data?.coords?.latitude,
+          longitude: data?.coords?.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+      }
     })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const polylineCoordinates = [];
@@ -131,13 +150,13 @@ function AvailableDrivers(props) {
     return (
       <View style={{ justifyContent: "center", alignItems: "center", flex: 1 }}>
         <View>
-          <MaterialIcons name='error-outline' size={100} color='black' />
+          <MaterialIcons name="error-outline" size={100} color="black" />
         </View>
         <AppText style={{ marginVertical: 16 }}>
           Error Loading Trip Details
         </AppText>
         <AppButton
-          title='Go Back'
+          title="Go Back"
           onPress={() => props.navigation.navigate("Home")}
         />
       </View>
@@ -148,12 +167,14 @@ function AvailableDrivers(props) {
       <View style={[styles.mapBox, { height: height * 0.6 }]}>
         <Pressable
           onPress={() => props.navigation.navigate("Home")}
-          style={styles.backButton}>
-          <Ionicons name='arrow-back' size={20} />
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={20} />
         </Pressable>
         <Pressable
           onPress={() => setShowBids(!showBids)}
-          style={styles.bidButton}>
+          style={styles.bidButton}
+        >
           <AppText style={{ color: colors.white }}>
             {showBids ? "Hide" : "Show"} bids
           </AppText>
@@ -170,7 +191,8 @@ function AvailableDrivers(props) {
                     justifyContent: "center",
                     alignItems: "center",
                     height: Dimensions.get("screen").height * 0.55,
-                  }}>
+                  }}
+                >
                   <ActivityIndicator animating={loadingTripBids} />
                   {!loadingTripBids && (
                     <AppText style={{ color: colors.white }}>
@@ -182,8 +204,10 @@ function AvailableDrivers(props) {
               renderItem={({ item }) => (
                 <BidResponseItem
                   bidItem={item}
-                  onAccept={() => setAcceptBid(true)}
-                  onAccept={() => acceptRejectBid(item._id, "accepted")}
+                  onAccept={() => {
+                    setAcceptBid(true);
+                    acceptRejectBid(item._id, "accepted");
+                  }}
                   onReject={() => acceptRejectBid(item._id, "rejected")}
                   loadingAccept={
                     processingBid.id === item._id &&
@@ -212,34 +236,41 @@ function AvailableDrivers(props) {
       <ScrollView
         style={[styles.usersBox, { height: height * 0.4 }]}
         showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}>
+        showsHorizontalScrollIndicator={false}
+      >
         <View
           style={{
             flex: 1,
             marginBottom: 30,
-          }}>
+          }}
+        >
           <Pressable style={styles.drawerBox}>
             <View style={styles.closeDrawer} />
           </Pressable>
           <View style={styles.usersList}>
-            <AppText size='medium'>Available for Delivery</AppText>
+            <AppText size="medium">Available for Delivery</AppText>
             {usersWithinDistance.length === 0 && (
               <View style={{ marginVertical: 16 }}>
                 <AppText>
-                  Loading drivers <ActivityIndicator />
+                  Finding drivers nearby... <ActivityIndicator />
                 </AppText>
               </View>
             )}
             {usersWithinDistance.map((i, index) => (
               <AvailableUserItem
-                name={i.name}
+                profilePhoto={i.profilePhoto}
+                name={`${i.firstName} ${i.lastName}`}
+                trips={i.trips}
+                ratings={i.ratings}
                 distance={i.distance}
                 key={index}
-                onPress={() =>
-                  // props.navigation.navigate("DriverProfileScreen", {
-                  //   userId: i.userId,
-                  // })
-                  inviteDriver(i.userId)
+                onPress={
+                  () =>
+                    props.navigation.navigate("DriverProfileScreen", {
+                      userId: i._id,
+                      trip,
+                    })
+                  // inviteDriver(i.userId)
                 }
               />
             ))}

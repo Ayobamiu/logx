@@ -58,6 +58,7 @@ function VerifyNumber(props) {
             alignItems: "center",
             justifyContent: "center",
             padding: 58,
+            backgroundColor: colors.white,
           }}>
           <StarGroup style={{ marginVertical: 40 }} />
           <AppText size='medium'>You are unstoppable!</AppText>

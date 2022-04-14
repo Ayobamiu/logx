@@ -108,6 +108,7 @@ function SafetyAndSecurityScreen(props) {
               </AppText>
             }
           </AppText>
+          <View style={{ height: 100 }} />
         </View>
       </View>
     </ScrollView>
@@ -119,6 +120,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: colors.white,
     paddingVertical: 32,
+    paddingBottom: 100,
   },
 });
 export default SafetyAndSecurityScreen;

@@ -1,26 +1,72 @@
 /** @format */
 
-import React, { useContext } from "react";
-import { View, StyleSheet, ImageBackground, FlatList } from "react-native";
+import React, { useContext, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  ImageBackground,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+} from "react-native";
 import AppText from "../components/AppText";
 import colors from "../config/colors";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import TransactionContext from "../contexts/transactions";
+import AppUserAvatar from "../components/AppUserAvatar";
+import transactionAPIs from "../api/transaction";
+import showToast from "../config/showToast";
 
 function PaymentHistoryScreen(props) {
+  let mounted = true;
   const { transactions, setTransactions } = useContext(TransactionContext);
 
-  const PaymentHistory = ({ imageUrl, name, transCode, amount, type }) => {
+  const getTransactions = async () => {
+    const { data, error } = await transactionAPIs.getMyTransactions();
+    if (error) {
+      showToast("Failed, Try Again!");
+    }
+    if (!error && data) {
+      // showToast("Successful!");
+      if (mounted) {
+        setTransactions(data);
+      }
+    }
+  };
+  useEffect(() => {
+    getTransactions();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    (async () => {
+      await getTransactions();
+      setRefreshing(false);
+    })();
+  }, []);
+  const PaymentHistory = ({
+    imageUrl,
+    name,
+    transCode,
+    amount,
+    type,
+    item,
+  }) => {
     return (
-      <View style={styles.paycard}>
-        <ImageBackground
-          source={{ uri: imageUrl }}
-          borderRadius={32 / 2}
-          style={styles.bigAvatar}>
-          {!imageUrl && (
-            <Feather name='user' size={(32 * 2) / 3} color={colors.black} />
-          )}
-        </ImageBackground>
+      <TouchableOpacity
+        onPress={() => {
+          props.navigation.navigate("TransactionDetails", item);
+        }}
+        style={styles.paycard}>
+        <AppUserAvatar
+          size='small'
+          color={colors.black}
+          profilePhoto={imageUrl}
+          backgroundColor={colors.greyBg}
+        />
         <View style={{ marginHorizontal: 10 }}>
           <AppText style={{ color: colors.black, fontWeight: "bold" }}>
             {name || "Anonymous"}
@@ -30,12 +76,15 @@ function PaymentHistoryScreen(props) {
         <AppText style={type === "minus" ? styles.minus : styles.plus}>
           &#8358;{Math.round(amount)}
         </AppText>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   return (
     <FlatList
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
       data={transactions}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
@@ -47,6 +96,7 @@ function PaymentHistoryScreen(props) {
           }
           transCode={item._id}
           type={item.type}
+          item={item}
           amount={item.amount}
           imageUrl={item?.payer?.profilePhoto}
         />

@@ -1,3 +1,5 @@
+/** @format */
+
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import colors from "../config/colors";
@@ -13,10 +15,9 @@ function AccountNavigator() {
           backgroundColor: colors.white,
           elevation: 0,
         },
-      }}
-    >
+      }}>
       <Stack.Screen
-        name="AccontScreen"
+        name='AccontScreen'
         component={AccontScreen}
         options={{ title: "Account" }}
       />

@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Platform,
+  ScrollView,
 } from "react-native";
 import colors from "../config/colors";
 import showToast from "../config/showToast";
@@ -57,8 +58,8 @@ function AddReview({ visible, toggleModal, onSubmit, trip }) {
   return (
     <Modal visible={visible} transparent>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : ""}>
-        <View
-          style={{
+        <ScrollView
+          contentContainerStyle={{
             backgroundColor: "rgba(0,0,0,0.5)",
             width: "100%",
             height: "100%",
@@ -66,7 +67,6 @@ function AddReview({ visible, toggleModal, onSubmit, trip }) {
           <Pressable style={{ flex: 0.5, flexGrow: 1 }} onPress={toggleModal} />
           <View
             style={{
-              flex: 0.5,
               width: "100%",
               borderTopRightRadius: 15,
               borderTopLeftRadius: 16,
@@ -130,7 +130,7 @@ function AddReview({ visible, toggleModal, onSubmit, trip }) {
               />
             </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );

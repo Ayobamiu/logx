@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import AppText from "../components/AppText";
 import TransactionYellowItem from "../components/TransactionYellowItem";
@@ -16,29 +17,46 @@ import TripsContext from "../contexts/trips";
 import placesApi from "../api/places";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { FlatList } from "react-native-gesture-handler";
+import AuthContext from "../contexts/auth";
+import socket from "../api/socket";
 
 function TransactionsScreen(props) {
+  let mounted = true;
   const [showing, setShowing] = useState("Ongoing");
   const { trips, setTrips } = useContext(TripsContext);
-  let tripsToShow = trips;
+  const { user, setUser } = useContext(AuthContext);
+
+  let tripsToShow = trips.filter(
+    (i) => i.status !== "completed" && i.status !== "cancelled"
+  );
   if (showing === "Completed") {
     tripsToShow = trips.filter((i) => i.status === "completed");
-  } else {
-    tripsToShow = trips.filter((i) => i.status !== "completed");
+  }
+  if (showing === "Cancelled") {
+    tripsToShow = trips.filter((i) => i.status === "cancelled");
   }
   const { trip, setTrip } = useContext(TripContext);
   const [loadingtrips, setLoadingtrips] = useState(false);
   const loadTrips = async () => {
-    setLoadingtrips(true);
+    if (mounted) {
+      setLoadingtrips(true);
+    }
 
     const { data, error } = await placesApi.getMyTrip();
     if (!error && data) {
-      setTrips(data);
+      if (mounted) {
+        setTrips(data);
+      }
     }
-    setLoadingtrips(false);
+    if (mounted) {
+      setLoadingtrips(false);
+    }
   };
   useEffect(() => {
     loadTrips();
+    return () => {
+      mounted = false;
+    };
   }, []);
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -49,6 +67,16 @@ function TransactionsScreen(props) {
       setRefreshing(false);
     })();
   }, []);
+
+  socket.on("trip:updated:users", (data) => {
+    if (data.receivers) {
+      if (data.receivers.includes(user._id)) {
+        if (mounted) {
+          loadTrips();
+        }
+      }
+    }
+  });
 
   return (
     <View style={styles.container}>
@@ -75,7 +103,12 @@ function TransactionsScreen(props) {
                     ? styles.selectedText
                     : styles.unselectedText,
                 ]}>
-                Ongoing
+                Ongoing{" "}
+                <ActivityIndicator
+                  size='small'
+                  color={colors.primary}
+                  animating={loadingtrips}
+                />
               </AppText>
             </Pressable>
             <Pressable
@@ -91,6 +124,21 @@ function TransactionsScreen(props) {
                     : styles.unselectedText,
                 ]}>
                 Completed
+              </AppText>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.selectButton,
+                showing === "Cancelled" ? styles.selected : styles.unselected,
+              ]}
+              onPress={() => setShowing("Cancelled")}>
+              <AppText
+                style={[
+                  showing === "Cancelled"
+                    ? styles.selectedText
+                    : styles.unselectedText,
+                ]}>
+                Cancelled
               </AppText>
             </Pressable>
           </View>
@@ -109,7 +157,7 @@ function TransactionsScreen(props) {
               <FontAwesome5 name='car-side' size={24} color='black' />
             </View>
             <AppText style={styles.mv10}>
-              You {showing} Trips will Appear Here
+              Your {showing} Trips will Appear Here
             </AppText>
           </View>
         }

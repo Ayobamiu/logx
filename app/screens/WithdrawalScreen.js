@@ -25,14 +25,24 @@ import useAuth from "../auth/useAuth";
 import AuthContext from "../contexts/auth";
 import useBanks from "../hooks/useBanks";
 import WithdrawalAPIs from "../api/withdraw";
+import axios from "axios";
+import server from "../api/server";
+import storage from "../auth/storage";
+import TransactionContext from "../contexts/transactions";
 
 function WithdrawalScreen(props) {
+  let mounted = true;
   const { loading, getBankRecords, bankRecords } = useBanks();
 
   const [refreshing, setRefreshing] = React.useState(false);
+  const { transactions, setTransactions } = useContext(TransactionContext);
   useEffect(() => {
     getBankRecords();
     // setUploadVisible(false);
+
+    return () => {
+      mounted = false;
+    };
   }, []);
   const [amount, setAmount] = useState();
   const [processing, setProcessing] = useState(false);
@@ -45,21 +55,44 @@ function WithdrawalScreen(props) {
   const { user } = useContext(AuthContext);
   const [progress, setProgress] = useState(0);
   const [paying, setPaying] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (data) => {
-    setProcessing(true);
-    setUseProcessingModal(true);
-    const result = await WithdrawalAPIs.withdraw({ ...data }, (progress) =>
-      setProgress(progress)
-    );
+    const token = await storage.getToken();
+    setErrorMessage("");
 
-    setProcessing(false);
-    if (result.error) {
-      setStatus("failed");
-      // return showToast("Could not process withdrawal");
-    } else {
-      // showToast("Successfull");
-      setStatus("success");
+    if (mounted) {
+      setProcessing(true);
+      setUseProcessingModal(true);
+    }
+    try {
+      const result = await axios.post(
+        server + "withdraw",
+        { ...data },
+        {
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        }
+      );
+      if (result.data.user) {
+        saveUser(result.data.user);
+      }
+      if (result.data.transactions) {
+        setTransactions([result.data.transactions, ...transactions]);
+      }
+      if (mounted) {
+        setProcessing(false);
+        setStatus("success");
+      }
+    } catch (error) {
+      setErrorMessage(
+        error?.response?.data?.message || "Error withdrawing, try again"
+      );
+      if (mounted) {
+        setProcessing(false);
+        setStatus("failed");
+      }
     }
   };
 
@@ -94,7 +127,8 @@ function WithdrawalScreen(props) {
             returnKeyType='done'
           />
           <AppText style={{ color: colors.success }}>
-            Total balance in your account: #{user.availableBalance}
+            Total balance in your account: &#8358;
+            {Math.round(user.availableBalance)}
           </AppText>
         </View>
 
@@ -222,6 +256,16 @@ function WithdrawalScreen(props) {
                     }}>
                     Withdrawal Failed!
                   </AppText>
+                  {errorMessage ? (
+                    <AppText
+                      style={{
+                        fontWeight: "bold",
+                        marginVertical: 10,
+                        color: colors.danger,
+                      }}>
+                      {errorMessage}
+                    </AppText>
+                  ) : null}
                   <AppButton
                     title='Try Again'
                     small
@@ -242,7 +286,11 @@ function WithdrawalScreen(props) {
                   <AppButton
                     title='Okay'
                     small
-                    onPress={() => setUseProcessingModal(false)}
+                    onPress={() => {
+                      setUseProcessingModal(false);
+
+                      props.navigation.popToTop();
+                    }}
                   />
                 </>
               )}

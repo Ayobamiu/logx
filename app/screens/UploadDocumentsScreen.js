@@ -7,6 +7,7 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Ionicons, Fontisto } from "@expo/vector-icons";
 import AppText from "../components/AppText";
@@ -28,7 +29,7 @@ function UploadDocumentsScreen(props) {
     setLoading(true);
     const result = await authApi.updateProfileMedia(data);
 
-    if (result.data.error) {
+    if (result.data && result.data.error) {
       setLoading(false);
       return showToast(result.data.message);
     }
@@ -45,7 +46,7 @@ function UploadDocumentsScreen(props) {
     setLoading(true);
     const result = await authApi.updateProfile(data);
 
-    if (result.data.error) {
+    if (result.data && result.data.error) {
       setLoading(false);
       return showToast(result.data.message);
     }
@@ -121,6 +122,10 @@ function UploadDocumentsScreen(props) {
               });
               if (file.type === "success") {
                 let { name, size, uri } = file;
+                if (Platform.OS === "android" && uri[0] === "/") {
+                  uri = `file://${uri}`;
+                  uri = uri.replace(/%/g, "%25");
+                }
                 let nameParts = name.split(".");
                 let fileType = nameParts[nameParts.length - 1];
                 var fileToUpload = {
@@ -143,6 +148,10 @@ function UploadDocumentsScreen(props) {
       });
       if (file.type === "success") {
         let { name, size, uri } = file;
+        if (Platform.OS === "android" && uri[0] === "/") {
+          uri = `file://${uri}`;
+          uri = uri.replace(/%/g, "%25");
+        }
         let nameParts = name.split(".");
         let fileType = nameParts[nameParts.length - 1];
         var fileToUpload = {
@@ -175,6 +184,10 @@ function UploadDocumentsScreen(props) {
               });
               if (file.type === "success") {
                 let { name, size, uri } = file;
+                if (Platform.OS === "android" && uri[0] === "/") {
+                  uri = `file://${uri}`;
+                  uri = uri.replace(/%/g, "%25");
+                }
                 let nameParts = name.split(".");
                 let fileType = nameParts[nameParts.length - 1];
                 var fileToUpload = {
@@ -197,6 +210,10 @@ function UploadDocumentsScreen(props) {
       });
       if (file.type === "success") {
         let { name, size, uri } = file;
+        if (Platform.OS === "android" && uri[0] === "/") {
+          uri = `file://${uri}`;
+          uri = uri.replace(/%/g, "%25");
+        }
         let nameParts = name.split(".");
         let fileType = nameParts[nameParts.length - 1];
         var fileToUpload = {
@@ -229,6 +246,10 @@ function UploadDocumentsScreen(props) {
               });
               if (file.type === "success") {
                 let { name, size, uri } = file;
+                if (Platform.OS === "android" && uri[0] === "/") {
+                  uri = `file://${uri}`;
+                  uri = uri.replace(/%/g, "%25");
+                }
                 let nameParts = name.split(".");
                 let fileType = nameParts[nameParts.length - 1];
                 var fileToUpload = {
@@ -251,6 +272,10 @@ function UploadDocumentsScreen(props) {
       });
       if (file.type === "success") {
         let { name, size, uri } = file;
+        if (Platform.OS === "android" && uri[0] === "/") {
+          uri = `file://${uri}`;
+          uri = uri.replace(/%/g, "%25");
+        }
         let nameParts = name.split(".");
         let fileType = nameParts[nameParts.length - 1];
         var fileToUpload = {
@@ -346,6 +371,7 @@ function UploadDocumentsScreen(props) {
     uploaded = false,
     onDelete,
     status,
+    type,
   }) => {
     return (
       <Pressable
@@ -360,8 +386,23 @@ function UploadDocumentsScreen(props) {
         ]}>
         <View>
           <AppText size='16' style={[styles.mh10]}>
-            {title}
+            {title}{" "}
+            {type ? (
+              <View
+                style={{
+                  backgroundColor: colors.greyBg,
+                  borderRadius: 20,
+                  padding: 3,
+                }}>
+                <AppText size='xx-small' style={[styles.mh10]}>
+                  {type}
+                </AppText>
+              </View>
+            ) : (
+              ""
+            )}
           </AppText>
+
           {uploaded && status === "pending" ? (
             <View
               style={{
@@ -442,6 +483,7 @@ function UploadDocumentsScreen(props) {
         uploaded={user.driversLicense}
         onDelete={removeLicense}
         status={user.driversLicenseVerificationStatus}
+        type='image'
       />
       <VerificationItem
         title='National ID Card'
@@ -449,6 +491,7 @@ function UploadDocumentsScreen(props) {
         onPress={uploadNationalId}
         onDelete={removeNID}
         status={user.nationalIdVerificationStatus}
+        type='pdf'
       />
       <VerificationItem
         title='Voter’s card'
@@ -456,6 +499,7 @@ function UploadDocumentsScreen(props) {
         uploaded={user.votersCard}
         onDelete={removeVoterscard}
         status={user.votersCardVerificationStatus}
+        type='pdf'
       />
       <VerificationItem
         title='Valid Passport'
@@ -463,6 +507,7 @@ function UploadDocumentsScreen(props) {
         onPress={uploadInternationalPassport}
         onDelete={removeInPss}
         status={user.internationalPassportVerificationStatus}
+        type='pdf'
       />
       <VerificationItem
         title='NIN Slip'
@@ -470,6 +515,7 @@ function UploadDocumentsScreen(props) {
         uploaded={user.ninSlip}
         onDelete={removeNIN}
         status={user.ninSlipVerificationStatus}
+        type='image'
       />
       <ActivityIndicator animating={loading} color={colors.primary} />
     </View>

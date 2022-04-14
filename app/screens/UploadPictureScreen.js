@@ -1,3 +1,5 @@
+/** @format */
+
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   View,
@@ -67,7 +69,7 @@ function UploadPictureScreen(props) {
   }
   return (
     <View style={styles.container}>
-      <AppText size="input" style={{ color: colors.light }}>
+      <AppText size='input' style={{ color: colors.light }}>
         Take a selfie to verify yourself. Don’t worry this photo will not appear
         on your profile.
       </AppText>
@@ -77,9 +79,8 @@ function UploadPictureScreen(props) {
             onPress={() => {
               setShowModal(false);
             }}
-            style={styles.closeIcon}
-          >
-            <Ionicons name="close" size={25} />
+            style={styles.closeIcon}>
+            <Ionicons name='close' size={25} />
           </Pressable>
           <Camera
             style={StyleSheet.absoluteFillObject}
@@ -96,10 +97,9 @@ function UploadPictureScreen(props) {
                       ? Camera.Constants.Type.front
                       : Camera.Constants.Type.back
                   );
-                }}
-              >
+                }}>
                 <Ionicons
-                  name="ios-camera-reverse"
+                  name='ios-camera-reverse'
                   size={(50 * 2) / 3}
                   color={colors.white}
                 />
@@ -110,9 +110,8 @@ function UploadPictureScreen(props) {
             style={[styles.avatarCamera, styles.floatCameraButton]}
             onPress={() => {
               snap();
-            }}
-          >
-            <Ionicons name="camera" size={(50 * 2) / 3} color={colors.white} />
+            }}>
+            <Ionicons name='camera' size={(50 * 2) / 3} color={colors.white} />
           </Pressable>
         </View>
       </Modal>
@@ -120,15 +119,14 @@ function UploadPictureScreen(props) {
       <ImageBackground
         borderRadius={(229 * 2) / 3}
         style={styles.avatar}
-        source={image && image.uri ? image : { uri: image }}
-      >
+        source={image && image.uri ? image : { uri: image }}>
         {!image && (
-          <Ionicons name="camera" size={(229 * 2) / 3} color={colors.white} />
+          <Ionicons name='camera' size={(229 * 2) / 3} color={colors.white} />
         )}
         {image && (
           <View style={[styles.avatarSmall, styles.floatBottom, { zIndex: 3 }]}>
             <Ionicons
-              name="checkmark"
+              name='checkmark'
               size={(43 * 2) / 3}
               color={colors.white}
             />
@@ -154,13 +152,13 @@ function UploadPictureScreen(props) {
               }}
             />
             <AppButton
-              title="Retake photo"
+              title='Retake photo'
               secondary
               onPress={() => setShowModal(true)}
             />
           </View>
         ) : (
-          <AppButton title="Take photo " onPress={() => setShowModal(true)} />
+          <AppButton title='Take photo ' onPress={() => setShowModal(true)} />
         )}
       </View>
     </View>
