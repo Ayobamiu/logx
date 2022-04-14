@@ -26,6 +26,7 @@
     "expo-camera": "~11.2.2",
     "expo-clipboard": "^1.1.0",
     "expo-constants": "~11.0.1",
+    "expo-dev-client": "~0.7.2",
     "expo-document-picker": "~9.2.4",
     "expo-image-picker": "~10.2.2",
     "expo-location": "~12.1.2",
