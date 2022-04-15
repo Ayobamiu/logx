@@ -132,7 +132,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.logx"
+        applicationId "com.logxinc.logx"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 3

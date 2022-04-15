@@ -1,3 +1,39 @@
+Issue fixed: 
+    Problem : MainApplication.java was in a wrong because 
+    Fix: Change the folder
+
+
+install packages
+set up metro.config.js
+set up app.json
+Add app folder
+
+Main Issues 
+"react-native-reanimated" config
+
+
+Packages not in the new app
+- "@react-native-community/masked-view": "0.1.10",❗⚠
+- "@react-navigation/drawer": "^5.12.9", ✅
+- "@voximplant/react-native-foreground-service": "^2.0.0",
+- "pubnub-react": "^2.1.1",
+-"react-native-google-places-autocomplete": "^2.4.1",
+- "react-native-reanimated": "~2.2.0",✅
+- "react-native-svg": "12.1.1",
+
+
+Fixes I have made 
+1. added to  android/build.gradle
+    maven {
+    // expo-camera bundles a custom com.google.android:cameraview
+    url "$rootDir/../node_modules/expo-camera/android/maven"
+    }
+
+
+
+
+
+
 remove  "resizeMode": "contain" in app.json
 add sentry-expo
 use registerRootComponent(App);
@@ -11,3 +47,8 @@ DSN: https://558ffcde3c4d4551991054ebdc2ce63d@o1203296.ingest.sentry.io/6329080
 auth token: be6e2cdec504483891c8c6b839fc92179b4c8574f65d422794867295310ad7a7
 Team: #logx
 
+
+
+
+
+04-15 19:24:09.691  3161  3161 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.logxinc.logx.MainApplication" on path: DexPathList[[zip file "/data/app/~~Vga_a7jeZkBnVnbr0uVlIA==/com.logxinc.logx-nja3pffMosEETUhfhTkj0w==/base.apk"],nativeLibraryDirectories=[/data/app/~~Vga_a7jeZkBnVnbr0uVlIA==/com.logxinc.logx-nja3pffMosEETUhfhTkj0w==/lib/x86, /data/app/~~Vga_a7jeZkBnVnbr0uVlIA==/com.logxinc.logx-nja3pffMosEETUhfhTkj0w==/base.apk!/lib/x86, /system/lib, /system_ext/lib]]

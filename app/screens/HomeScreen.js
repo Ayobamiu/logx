@@ -6,7 +6,6 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  Pressable,
   Dimensions,
   Modal,
   ActivityIndicator,
@@ -123,17 +122,19 @@ function HomeScreen(props) {
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
+        }
+      >
         <View style={[styles.blueSection]}>
           <View style={styles.userDetails}>
-            <Pressable
+            <TouchableOpacity
               onPress={() => {
                 props.navigation.openDrawer();
               }}
-              style={styles.userDetailsTwo}>
+              style={styles.userDetailsTwo}
+            >
               <AppUserAvatar
                 profilePhoto={user.profilePhoto}
-                size='small'
+                size="small"
                 onPress={() => {
                   props.navigation.openDrawer();
                 }}
@@ -147,11 +148,12 @@ function HomeScreen(props) {
                   />
                 </AppText>
               )}
-            </Pressable>
+            </TouchableOpacity>
             {expandWhiteSection && (
               <AppText
-                size='medium'
-                style={{ color: colors.white, fontWeight: "bold" }}>
+                size="medium"
+                style={{ color: colors.white, fontWeight: "bold" }}
+              >
                 Log-X
               </AppText>
             )}
@@ -170,7 +172,7 @@ function HomeScreen(props) {
                 />
               )}
               <Feather
-                name='bell'
+                name="bell"
                 size={30}
                 color={colors.white}
                 onPress={() => {
@@ -186,21 +188,24 @@ function HomeScreen(props) {
                 minHeight: 150,
               },
               styles.mv10,
-            ]}>
+            ]}
+          >
             <AppText
-              size='16'
+              size="16"
               style={{
                 color: colors.primary,
                 lineHeight: 21,
-              }}>
+              }}
+            >
               Welcome {user.firstName}.
             </AppText>
             <AppText
-              size='16'
+              size="16"
               style={{
                 color: colors.primary,
                 lineHeight: 21,
-              }}>
+              }}
+            >
               Experience the most seamless delivery process. Connect with
               freelance delivery personnels near you.
             </AppText>
@@ -213,26 +218,29 @@ function HomeScreen(props) {
                 }
                 props.navigation.closeDrawer();
               }}
-              style={styles.startDeliverying}>
+              style={styles.startDeliverying}
+            >
               <AppText>Start delivering</AppText>
-              <Ionicons name='arrow-forward' size={20} />
+              <Ionicons name="arrow-forward" size={20} />
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={[styles.whiteSection]}>
-          <Pressable
+          <TouchableOpacity
             style={styles.drawerBox}
-            onPress={() => setExpandWhiteSection(!expandWhiteSection)}>
+            onPress={() => setExpandWhiteSection(!expandWhiteSection)}
+          >
             <View style={styles.closeDrawer} />
-          </Pressable>
+          </TouchableOpacity>
           <View style={{ paddingHorizontal: width * 0.05 }}>
-            <Pressable
+            <TouchableOpacity
               onPress={() => {
                 props.navigation.navigate("MyEarningsScreen");
               }}
-              style={styles.yellowBox}>
-              <AppText size='header'>
+              style={styles.yellowBox}
+            >
+              <AppText size="header">
                 &#8358;{Math.round(user.availableBalance)}
               </AppText>
 
@@ -247,15 +255,16 @@ function HomeScreen(props) {
                   justifyContent: "center",
                   alignItems: "center",
                   flexDirection: "row",
-                }}>
-                <Feather name='plus' size={15} color={colors.primary} />
+                }}
+              >
+                <Feather name="plus" size={15} color={colors.primary} />
                 <AppText style={styles.primary}>Add Fund</AppText>
               </TouchableOpacity>
-            </Pressable>
+            </TouchableOpacity>
 
             <SectionHeader
-              headerText='Ongoing transactions'
-              buttonText='More'
+              headerText="Ongoing transactions"
+              buttonText="More"
               onPress={() => props.navigation.navigate("Transactions")}
             />
 
@@ -264,8 +273,9 @@ function HomeScreen(props) {
                 style={[
                   { justifyContent: "center", alignItems: "center" },
                   styles.mv10,
-                ]}>
-                <FontAwesome5 name='car-side' size={24} color='black' />
+                ]}
+              >
+                <FontAwesome5 name="car-side" size={24} color="black" />
                 <AppText style={styles.mv10}>
                   Your Ongoing Trips will Appear Here
                 </AppText>
@@ -283,7 +293,7 @@ function HomeScreen(props) {
                 }}
               />
             ))}
-            <SectionHeader headerText='Quick Actions' />
+            <SectionHeader headerText="Quick Actions" />
             <QuickActonItem
               onPress={() => props.navigation.navigate("Transactions")}
             />
@@ -296,8 +306,9 @@ function HomeScreen(props) {
               backgroundColor: "rgba(0,0,0,0.5)",
               width: "100%",
               height: "100%",
-            }}>
-            <Pressable
+            }}
+          >
+            <TouchableOpacity
               style={{ flex: 0.5, flexGrow: 1 }}
               onPress={() => setShowRequestModal(false)}
             />
@@ -310,10 +321,11 @@ function HomeScreen(props) {
                 backgroundColor: colors.white,
                 padding: 32,
                 flexShrink: 1,
-              }}>
+              }}
+            >
               {showCancelPrompt ? (
                 <View>
-                  <AppText size='medium'>Confirmation</AppText>
+                  <AppText size="medium">Confirmation</AppText>
                   <AppText style={styles.mv10}>
                     Are you sure you want to cancel?
                   </AppText>
@@ -325,9 +337,10 @@ function HomeScreen(props) {
                         // justifyContent: "space-between",
                         marginTop: 30,
                       },
-                    ]}>
+                    ]}
+                  >
                     <AppButton
-                      title='No, Go back'
+                      title="No, Go back"
                       secondary
                       style={{
                         borderColor: colors.black,
@@ -338,7 +351,7 @@ function HomeScreen(props) {
                       onPress={() => setShowCancelPrompt(false)}
                     />
                     <AppButton
-                      title='Yes, Cancel'
+                      title="Yes, Cancel"
                       style={
                         {
                           // paddingHorizontal: 30,
@@ -350,7 +363,7 @@ function HomeScreen(props) {
                 </View>
               ) : (
                 <View>
-                  <AppText size='medium'>Delivery Request</AppText>
+                  <AppText size="medium">Delivery Request</AppText>
                   <AppText style={styles.mv10}>
                     You have been invited as a receiver to this transaction by
                     <AppText style={[styles.bold]}> Adekola Oluwatobi</AppText>
@@ -363,9 +376,10 @@ function HomeScreen(props) {
                         // justifyContent: "space-between",
                         marginTop: 30,
                       },
-                    ]}>
+                    ]}
+                  >
                     <AppButton
-                      title='Cancel'
+                      title="Cancel"
                       secondary
                       style={{
                         borderColor: colors.black,
@@ -376,7 +390,7 @@ function HomeScreen(props) {
                       onPress={() => setShowCancelPrompt(true)}
                     />
                     <AppButton
-                      title='Join now'
+                      title="Join now"
                       style={
                         {
                           // paddingHorizontal: 30,
@@ -394,11 +408,11 @@ function HomeScreen(props) {
       <View style={styles.bottom}>
         <AppButton
           fullWidth
-          title='Send a Package'
+          title="Send a Package"
           whiteText
           Icon={
             <Ionicons
-              name='arrow-forward'
+              name="arrow-forward"
               color={colors.white}
               size={16}
               style={{ marginHorizontal: 16 }}

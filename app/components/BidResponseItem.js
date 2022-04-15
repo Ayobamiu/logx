@@ -7,7 +7,7 @@ import {
   Dimensions,
   ImageBackground,
   ActivityIndicator,
-  Pressable,
+  TouchableOpacity,
 } from "react-native";
 import colors from "../config/colors";
 import AppText from "./AppText";
@@ -29,39 +29,40 @@ function BidResponseItem({
   return (
     <View style={[styles.container, { width: width - 48 }]}>
       <View style={styles.textSection}>
-        <Pressable onPress={onPressProfile}>
+        <TouchableOpacity onPress={onPressProfile}>
           <AppUserAvatar
-            size='small'
+            size="small"
             profilePhoto={bidItem?.driver?.profilePhoto}
             color={colors.black}
             backgroundColor={colors.greyBg}
             onPress={onPressProfile}
           />
-        </Pressable>
+        </TouchableOpacity>
         <View style={styles.mr10}>
           <AppText style={[styles.unselectedText]}>
             {bidItem?.driver?.firstName} {bidItem?.driver?.lastName}
           </AppText>
           <View style={[styles.row]}>
-            <Ionicons name='star' color={colors.primary} size={15} />
-            <Ionicons name='star' color={colors.primary} size={15} />
-            <Ionicons name='star' color={colors.primary} size={15} />
-            <Ionicons name='star' color={colors.primary} size={15} />
-            <Ionicons name='star' color={colors.greyBg} size={15} />
-            <AppText size='16'>
+            <Ionicons name="star" color={colors.primary} size={15} />
+            <Ionicons name="star" color={colors.primary} size={15} />
+            <Ionicons name="star" color={colors.primary} size={15} />
+            <Ionicons name="star" color={colors.primary} size={15} />
+            <Ionicons name="star" color={colors.greyBg} size={15} />
+            <AppText size="16">
               4.5
-              <AppText size='x-small' style={styles.light}>
+              <AppText size="x-small" style={styles.light}>
                 (110)
               </AppText>
             </AppText>
           </View>
         </View>
-        <AppText size='medium' style={[styles.black, styles.mlAuto]}>
+        <AppText size="medium" style={[styles.black, styles.mlAuto]}>
           &#8358;{bidItem?.price}
         </AppText>
       </View>
       <View
-        style={[styles.row, { height: 65, justifyContent: "space-around" }]}>
+        style={[styles.row, { height: 65, justifyContent: "space-around" }]}
+      >
         {bidItem?.status !== "accepted" && bidItem?.status !== "rejected" && (
           <AppButton
             title={
@@ -105,7 +106,8 @@ function BidResponseItem({
               width: "100%",
               justifyContent: "center",
               alignItems: "center",
-            }}>
+            }}
+          >
             <AppText style={{ color: colors.success }}>Accepted</AppText>
           </View>
         )}
@@ -117,7 +119,8 @@ function BidResponseItem({
               width: "100%",
               justifyContent: "center",
               alignItems: "center",
-            }}>
+            }}
+          >
             <AppText style={{ color: colors.danger }}>Rejected</AppText>
           </View>
         )}

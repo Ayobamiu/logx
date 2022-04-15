@@ -9,6 +9,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
 } from "react-native";
 import colors from "../config/colors";
 import showToast from "../config/showToast";
@@ -27,7 +28,8 @@ function AddExtraTime({ visible, toggleModal, onSubmit }) {
             backgroundColor: "rgba(0,0,0,0.5)",
             width: "100%",
             height: "100%",
-          }}>
+          }}
+        >
           <Pressable style={{ flex: 0.5, flexGrow: 1 }} onPress={toggleModal} />
           <View
             style={{
@@ -38,9 +40,10 @@ function AddExtraTime({ visible, toggleModal, onSubmit }) {
               backgroundColor: colors.white,
               padding: 32,
               flexShrink: 1,
-            }}>
+            }}
+          >
             <View>
-              <AppText size='medium'>Add Extra time</AppText>
+              <AppText size="medium">Add Extra time</AppText>
               <AppText style={styles.mv10}>Time</AppText>
               <View
                 style={{
@@ -52,49 +55,54 @@ function AddExtraTime({ visible, toggleModal, onSubmit }) {
                   height: 47,
                   borderRadius: 3,
                   padding: 8,
-                }}>
+                }}
+              >
                 <TextInput
                   style={styles.full_width}
                   defaultValue={timeValue?.toString()}
                   onChangeText={(text) => {
                     setTimeValue(Number(text));
                   }}
-                  keyboardType='number-pad'
-                  returnKeyType='done'
+                  keyboardType="number-pad"
+                  returnKeyType="done"
                 />
                 <View style={styles.picker}>
-                  <Pressable
+                  <TouchableOpacity
                     style={[
                       timeFormat === "H"
                         ? styles.pickedItem
                         : styles.pickerItem,
                     ]}
-                    onPress={() => setTimeFormat("H")}>
+                    onPress={() => setTimeFormat("H")}
+                  >
                     <AppText
                       style={[
                         timeFormat === "H"
                           ? styles.pickedItemText
                           : styles.pickerItemText,
-                      ]}>
+                      ]}
+                    >
                       H
                     </AppText>
-                  </Pressable>
-                  <Pressable
+                  </TouchableOpacity>
+                  <TouchableOpacity
                     style={[
                       timeFormat === "M"
                         ? styles.pickedItem
                         : styles.pickerItem,
                     ]}
-                    onPress={() => setTimeFormat("M")}>
+                    onPress={() => setTimeFormat("M")}
+                  >
                     <AppText
                       style={[
                         timeFormat === "M"
                           ? styles.pickedItemText
                           : styles.pickerItemText,
-                      ]}>
+                      ]}
+                    >
                       M
                     </AppText>
-                  </Pressable>
+                  </TouchableOpacity>
                   {/* <Picker
                     selectedValue={"Hours"}
                     onValueChange={(itemValue, itemIndex) => {
@@ -122,9 +130,10 @@ function AddExtraTime({ visible, toggleModal, onSubmit }) {
                     justifyContent: "space-between",
                     marginTop: 30,
                   },
-                ]}>
+                ]}
+              >
                 <AppButton
-                  title='Go back'
+                  title="Go back"
                   secondary
                   style={{
                     borderColor: colors.black,
@@ -134,7 +143,7 @@ function AddExtraTime({ visible, toggleModal, onSubmit }) {
                   onPress={toggleModal}
                 />
                 <AppButton
-                  title='Submit'
+                  title="Submit"
                   style={{
                     paddingHorizontal: 40,
                   }}

@@ -1,7 +1,12 @@
 /** @format */
 
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable, ImageBackground } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ImageBackground,
+} from "react-native";
 import colors from "../config/colors";
 import AppText from "./AppText";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
@@ -20,19 +25,19 @@ function AvailableUserItem({
   const sum = ratings?.reduce((a, b) => a + b, 0);
   const userRating = sum / ratings?.length || 0;
   return (
-    <Pressable onPress={onPress} style={[styles.container, styles.row]}>
+    <TouchableOpacity onPress={onPress} style={[styles.container, styles.row]}>
       <View style={styles.row}>
         <AppUserAvatar
-          size='small'
+          size="small"
           profilePhoto={profilePhoto}
           color={colors.black}
           backgroundColor={colors.grey}
           onPress={onPress}
         />
         <View style={{ marginLeft: 10 }}>
-          <AppText size='16'>
+          <AppText size="16">
             {name}
-            <AppText size='x-small' style={styles.italic}>
+            <AppText size="x-small" style={styles.italic}>
               {" "}
               {km > 0
                 ? `${Math.round(km)}km Away`
@@ -48,10 +53,10 @@ function AvailableUserItem({
                 color={i > userRating ? colors.black : colors.primary}
               />
             ))}
-            <AppText size='16'>
+            <AppText size="16">
               {userRating}
               {trips ? (
-                <AppText size='x-small' style={styles.light}>
+                <AppText size="x-small" style={styles.light}>
                   {" "}
                   ({trips} deliveries)
                 </AppText>
@@ -60,8 +65,8 @@ function AvailableUserItem({
           </View>
         </View>
       </View>
-      <FontAwesome5 name='angle-right' color={colors.black} size={20} />
-    </Pressable>
+      <FontAwesome5 name="angle-right" color={colors.black} size={20} />
+    </TouchableOpacity>
   );
 }
 const styles = StyleSheet.create({

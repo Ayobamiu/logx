@@ -26,13 +26,15 @@ function AppButton({
         style,
       ]}
       disabled={disabled}
-      onPress={onPress}>
+      onPress={onPress}
+    >
       <Text
         style={[
           styles.text,
           secondary && styles.secondaryText,
           whiteText && styles.whiteText,
-        ]}>
+        ]}
+      >
         {title}
       </Text>
       {Icon}

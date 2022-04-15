@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  TouchableOpacity,
 } from "react-native";
 import AppText from "../components/AppText";
 import {
@@ -456,7 +457,7 @@ function TransactionDetailsScreen(props) {
                 <Pressable style={styles.plusButton}>
                   <MaterialCommunityIcons name="plus" color={colors.light} />
                 </Pressable>
-                <Pressable
+                <TouchableOpacity
                   style={styles.startButton}
                   onPress={() => {
                     setCountingDown(true);
@@ -465,7 +466,7 @@ function TransactionDetailsScreen(props) {
                   <AppText size="16" style={[styles.white, styles.bold]}>
                     Start
                   </AppText>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             </View>
           )}

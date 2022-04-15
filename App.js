@@ -1,7 +1,7 @@
-/** @format */
+// /** @format */
 
-import "react-native-gesture-handler";
-import * as React from "react";
+// import "react-native-gesture-handler";
+import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import AuthNavigator from "./app/routes/AuthNavigator";
 import AuthContext from "./app/contexts/auth";
@@ -24,7 +24,6 @@ import useLocation from "./app/hooks/useLocation";
 import Constants from "expo-constants";
 import { PubNubProvider } from "pubnub-react";
 import PubNub from "pubnub";
-import { Text, View } from "react-native";
 
 export default function App() {
   // Prevent native splash screen from autohiding before App component declaration
@@ -102,19 +101,7 @@ export default function App() {
                       <ModeContext.Provider value={{ mode, setMode }}>
                         <AuthContext.Provider value={{ user, setUser }}>
                           <NavigationContainer ref={navigationRef}>
-                            {/* {user ? <DrawerNavigator /> : <AuthNavigator />} */}
-                            <View
-                              style={{
-                                flex: 1,
-                                justifyContent: "center",
-                                alignItems: "center",
-                              }}
-                            >
-                              <Text>
-                                This is a simple text to troubleshoot the LogX
-                                App
-                              </Text>
-                            </View>
+                            {user ? <DrawerNavigator /> : <AuthNavigator />}
                           </NavigationContainer>
                         </AuthContext.Provider>
                       </ModeContext.Provider>
@@ -129,3 +116,23 @@ export default function App() {
     </RootSiblingParent>
   );
 }
+// import { StatusBar } from "expo-status-bar";
+// import { StyleSheet, Text, View } from "react-native";
+
+// export default function App() {
+//   return (
+//     <View style={styles.container}>
+//       <Text>LogX app!</Text>
+//       <StatusBar style="auto" />
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: "#fff",
+//     alignItems: "center",
+//     justifyContent: "center",
+//   },
+// });
