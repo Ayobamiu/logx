@@ -1,4 +1,4 @@
-package com.logxinc.logx;
+package com.logx;
 
 import android.os.Bundle;
 
@@ -9,7 +9,7 @@ import com.swmansion.gesturehandler.react.RNGestureHandlerEnabledRootView;
 
 import expo.modules.splashscreen.singletons.SplashScreen;
 import expo.modules.splashscreen.SplashScreenImageResizeMode;
-import com.logxinc.logx.R;
+import com.logx.R;
 
 
 public class MainActivity extends ReactActivity {

@@ -33,7 +33,7 @@
       }
     },
     "android": {
-      "package": "com.logxinc.logx",
+      "package": "com.logx",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/adaptive-icon.png",

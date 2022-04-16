@@ -51,4 +51,4 @@ Team: #logx
 
 
 
-04-15 19:24:09.691  3161  3161 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.logxinc.logx.MainApplication" on path: DexPathList[[zip file "/data/app/~~Vga_a7jeZkBnVnbr0uVlIA==/com.logxinc.logx-nja3pffMosEETUhfhTkj0w==/base.apk"],nativeLibraryDirectories=[/data/app/~~Vga_a7jeZkBnVnbr0uVlIA==/com.logxinc.logx-nja3pffMosEETUhfhTkj0w==/lib/x86, /data/app/~~Vga_a7jeZkBnVnbr0uVlIA==/com.logxinc.logx-nja3pffMosEETUhfhTkj0w==/base.apk!/lib/x86, /system/lib, /system_ext/lib]]
+04-15 19:24:09.691  3161  3161 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.logx.MainApplication" on path: DexPathList[[zip file "/data/app/~~Vga_a7jeZkBnVnbr0uVlIA==/com.logx-nja3pffMosEETUhfhTkj0w==/base.apk"],nativeLibraryDirectories=[/data/app/~~Vga_a7jeZkBnVnbr0uVlIA==/com.logx-nja3pffMosEETUhfhTkj0w==/lib/x86, /data/app/~~Vga_a7jeZkBnVnbr0uVlIA==/com.logx-nja3pffMosEETUhfhTkj0w==/base.apk!/lib/x86, /system/lib, /system_ext/lib]]

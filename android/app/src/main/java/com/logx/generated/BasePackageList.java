@@ -1,4 +1,4 @@
-package com.logxinc.logx.generated;
+package com.logx.generated;
 
 import java.util.Arrays;
 import java.util.List;
