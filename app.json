@@ -33,6 +33,11 @@
       }
     },
     "android": {
+      "config":{
+        "googleMaps":{
+          "apiKey":"AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y"
+        }
+      },
       "package": "com.logx",
       "versionCode": 1,
       "adaptiveIcon": {

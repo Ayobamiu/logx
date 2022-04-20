@@ -137,7 +137,8 @@ function DriverProfileScreen(props) {
       <ScrollView
         contentContainerStyle={styles.ph32}
         showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}>
+        showsHorizontalScrollIndicator={false}
+      >
         {loadingProfile && (
           <ActivityIndicator
             animating={loadingProfile}
@@ -146,13 +147,13 @@ function DriverProfileScreen(props) {
         )}
         <View style={styles.mt10}>
           <AppText style={[styles.unselectedText]}>Name</AppText>
-          <AppText size='16' style={[styles.black]}>
+          <AppText size="16" style={[styles.black]}>
             {profile?.firstName} {profile?.lastName}
           </AppText>
         </View>
         <View style={styles.mt10}>
           <AppText style={[styles.unselectedText]}>Phone</AppText>
-          <AppText size='16' style={[styles.black]}>
+          <AppText size="16" style={[styles.black]}>
             {profile?.phoneNumber}
           </AppText>
         </View>
@@ -160,13 +161,13 @@ function DriverProfileScreen(props) {
           <AppText style={[styles.unselectedText]}>
             Location of operation
           </AppText>
-          <AppText size='16' style={[styles.black]}>
+          <AppText size="16" style={[styles.black]}>
             {address?.region}, {address?.country}
           </AppText>
         </View>
         <View style={styles.mt10}>
           <AppText style={[styles.unselectedText]}>Joined on</AppText>
-          <AppText size='16' style={[styles.black]}>
+          <AppText size="16" style={[styles.black]}>
             {profile?.createdAt
               ? new Date(profile?.createdAt).toDateString()
               : "Not Available"}
@@ -176,7 +177,7 @@ function DriverProfileScreen(props) {
           <AppText style={[styles.unselectedText]}>
             No. of successful Deliveries
           </AppText>
-          <AppText size='16' style={[styles.black]}>
+          <AppText size="16" style={[styles.black]}>
             {profile?.trips}
           </AppText>
         </View>
@@ -194,7 +195,8 @@ function DriverProfileScreen(props) {
                 styles.row,
                 { justifyContent: "space-around" },
                 styles.mv10,
-              ]}>
+              ]}
+            >
               {ratings.map((i, index) => (
                 <Ionicons
                   key={index}
@@ -204,9 +206,9 @@ function DriverProfileScreen(props) {
                 />
               ))}
             </View>
-            <AppText size='16'>
+            <AppText size="16">
               {userRating}
-              <AppText size='x-small' style={styles.light}>
+              <AppText size="x-small" style={styles.light}>
                 {" "}
                 ({profile?.trips} deliveries)
               </AppText>
@@ -258,9 +260,10 @@ function DriverProfileScreen(props) {
         onPress={() => {
           props.navigation.goBack();
         }}
-        style={styles.backButton}>
+        style={styles.backButton}
+      >
         <Ionicons
-          name='arrow-back'
+          name="arrow-back"
           size={20}
           onPress={() => {
             props.navigation.goBack();
@@ -269,7 +272,7 @@ function DriverProfileScreen(props) {
       </Pressable>
       <View style={styles.profileDetails}>
         <View style={styles.blue}>
-          <Ionicons name='image' color={colors.black} size={50} />
+          <Ionicons name="image" color={colors.black} size={50} />
         </View>
         <View style={[styles.white, { alignItems: "center", paddingTop: 20 }]}>
           <AppUserAvatar
@@ -284,18 +287,18 @@ function DriverProfileScreen(props) {
                 color={colors.primary}
               />
             )}
-            <AppText size='medium'>
+            <AppText size="medium">
               {profile?.firstName} {profile?.lastName}
             </AppText>
             <View style={[styles.row]}>
-              <Ionicons name='star' color={colors.primary} size={15} />
-              <Ionicons name='star' color={colors.primary} size={15} />
-              <Ionicons name='star' color={colors.primary} size={15} />
-              <Ionicons name='star' color={colors.primary} size={15} />
-              <Ionicons name='star' color={colors.greyBg} size={15} />
-              <AppText size='16'>
+              <Ionicons name="star" color={colors.primary} size={15} />
+              <Ionicons name="star" color={colors.primary} size={15} />
+              <Ionicons name="star" color={colors.primary} size={15} />
+              <Ionicons name="star" color={colors.primary} size={15} />
+              <Ionicons name="star" color={colors.greyBg} size={15} />
+              <AppText size="16">
                 4.5
-                <AppText size='x-small' style={styles.light}>
+                <AppText size="x-small" style={styles.light}>
                   ({profile?.trips} deliveries)
                 </AppText>
               </AppText>
@@ -305,15 +308,17 @@ function DriverProfileScreen(props) {
                 onPress={() => {
                   Linking.openURL(`sms: ${profile?.phoneNumber}`);
                 }}
-                style={styles.iconWrap}>
-                <FontAwesome name='envelope' size={15} color={colors.danger} />
+                style={styles.iconWrap}
+              >
+                <FontAwesome name="envelope" size={15} color={colors.danger} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.iconWrap}
                 onPress={() => {
                   Linking.openURL(`tel:${profile?.phoneNumber}`);
-                }}>
-                <Ionicons name='call' color={colors.success} size={15} />
+                }}
+              >
+                <Ionicons name="call" color={colors.success} size={15} />
               </TouchableOpacity>
             </View>
           </View>
@@ -326,13 +331,15 @@ function DriverProfileScreen(props) {
               styles.selectButton,
               showing === "about" ? styles.selected : styles.unselected,
             ]}
-            onPress={() => setShowing("about")}>
+            onPress={() => setShowing("about")}
+          >
             <AppText
               style={[
                 showing === "about"
                   ? styles.selectedText
                   : styles.unselectedText,
-              ]}>
+              ]}
+            >
               About
             </AppText>
           </Pressable>
@@ -341,13 +348,15 @@ function DriverProfileScreen(props) {
               styles.selectButton,
               showing === "reviews" ? styles.selected : styles.unselected,
             ]}
-            onPress={() => setShowing("reviews")}>
+            onPress={() => setShowing("reviews")}
+          >
             <AppText
               style={[
                 showing === "reviews"
                   ? styles.selectedText
                   : styles.unselectedText,
-              ]}>
+              ]}
+            >
               Reviews
             </AppText>
           </Pressable>
@@ -448,7 +457,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   mt10: { marginTop: 10 },
-  ph32: { paddingHorizontal: 32, paddingVertical: 16 },
+  ph32: { paddingHorizontal: 32, paddingVertical: 16, paddingBottom: 100 },
   profileDetails: {
     backgroundColor: colors.white,
     paddingBottom: 30,

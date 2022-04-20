@@ -67,9 +67,8 @@ function EnterLocationScreen(props) {
   const [pickUpRegion, setPickUpRegion] = useState("");
   const [journeyType, setJourneyType] = useState("");
   const [openJourneyTypePanel, setOpenJourneyTypePanel] = useState(false);
-  const [gettingMyCurrentLocation, setGettingMyCurrentLocation] = useState(
-    false
-  );
+  const [gettingMyCurrentLocation, setGettingMyCurrentLocation] =
+    useState(false);
 
   const [sameRegionError, setSameRegionError] = useState(false);
   const [differentRegionError, setDifferentRegionError] = useState(false);
@@ -117,7 +116,7 @@ function EnterLocationScreen(props) {
 
       url: `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(
         value
-      )}&inputtype=textquery&fields=formatted_address%2Cname%2Crating%2Copening_hours%2Cgeometry%2Cplace_id&key=AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y`,
+      )}&inputtype=textquery&fields=formatted_address%2Cname%2Crating%2Copening_hours%2Cgeometry%2Cplace_id&key=AIzaSyAPHNQTmBHXh6-lJaWmIMFbRikrrkncssk`,
       headers: {},
     };
     if (mounted) {
@@ -168,7 +167,8 @@ function EnterLocationScreen(props) {
                 color: colors.primary,
                 marginLeft: "auto",
               }}
-              onPress={closePanel}>
+              onPress={closePanel}
+            >
               close
             </AppText>
           </TouchableOpacity>
@@ -184,9 +184,10 @@ function EnterLocationScreen(props) {
               onPress={() => {
                 onPressResult(i.formatted_address);
                 closePanel();
-              }}>
-              <AppText size='x-small'>{i.name}</AppText>
-              <AppText style={{ color: colors.secondary }} size='xx-small'>
+              }}
+            >
+              <AppText size="x-small">{i.name}</AppText>
+              <AppText style={{ color: colors.secondary }} size="xx-small">
                 {i.formatted_address}
               </AppText>
             </TouchableOpacity>
@@ -209,7 +210,7 @@ function EnterLocationScreen(props) {
     if (pickUPoint?.latitude && pickUPoint?.longitude) {
       const pickUpAddressData = await axios
         .get(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${pickUPoint?.latitude},${pickUPoint?.longitude}&key=AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y&type=street`
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${pickUPoint?.latitude},${pickUPoint?.longitude}&key=AIzaSyAPHNQTmBHXh6-lJaWmIMFbRikrrkncssk&type=street`
         )
         .catch((e) => {});
       const pickUpAddressResult = pickUpAddressData?.data.results[0];
@@ -236,20 +237,19 @@ function EnterLocationScreen(props) {
     if (deliveryPoint?.latitude && deliveryPoint?.longitude) {
       const deliveryAddressData = await axios
         .get(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${deliveryPoint?.latitude},${deliveryPoint?.longitude}&key=AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y`
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${deliveryPoint?.latitude},${deliveryPoint?.longitude}&key=AIzaSyAPHNQTmBHXh6-lJaWmIMFbRikrrkncssk`
         )
         .catch((e) => {});
       const deliveryAddressResult = deliveryAddressData?.data.results[0];
 
-      let deliveryAddressComponent = deliveryAddressResult?.address_components.map(
-        (i) => {
+      let deliveryAddressComponent =
+        deliveryAddressResult?.address_components.map((i) => {
           if (!i.types.includes("country")) {
             return i.long_name;
           } else {
             return "";
           }
-        }
-      );
+        });
       if (mounted) {
         setDeliveryRegion(deliveryAddressComponent.filter((v) => v != ""));
       }
@@ -339,7 +339,7 @@ function EnterLocationScreen(props) {
     if (data?.coords?.latitude && data?.coords?.longitude) {
       let currentAddresData = await axios
         .get(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${data?.coords?.latitude},${data?.coords?.longitude}&key=AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y&result_type=street_address`
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${data?.coords?.latitude},${data?.coords?.longitude}&key=AIzaSyAPHNQTmBHXh6-lJaWmIMFbRikrrkncssk&result_type=street_address`
         )
         .catch((e) => {});
       if (!currentAddresResult) {
@@ -348,7 +348,7 @@ function EnterLocationScreen(props) {
         );
         currentAddresData = await axios
           .get(
-            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${data?.coords?.latitude},${data?.coords?.longitude}&key=AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y`
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${data?.coords?.latitude},${data?.coords?.longitude}&key=AIzaSyAPHNQTmBHXh6-lJaWmIMFbRikrrkncssk`
           )
           .catch((e) => {});
       }
@@ -392,20 +392,23 @@ function EnterLocationScreen(props) {
       innerRef={formikForm}
       initialValues={{}}
       onSubmit={handleSubmitPackages}
-      validationSchema={validationSchema}>
+      validationSchema={validationSchema}
+    >
       {({ handleChange, handleBlur, handleSubmit, errors, values }) => (
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : ""}
-          style={styles.container}>
+          style={styles.container}
+        >
           <ScrollView
             contentContainerStyle={{
               minHeight: "100%",
-            }}>
+            }}
+          >
             <View style={styles.inputBox}>
               <View style={{ flexDirection: "row" }}>
-                <SectionHeader headerText='Enter destination details' />
+                <SectionHeader headerText="Enter destination details" />
                 <ActivityIndicator
-                  size='large'
+                  size="large"
                   color={colors.primary}
                   animating={loadingLatLong}
                 />
@@ -413,19 +416,20 @@ function EnterLocationScreen(props) {
               <AppTextInput
                 editable={!loadingLatLong}
                 white
-                placeholder='Where are you picking from?'
+                placeholder="Where are you picking from?"
                 style={{ paddingHorizontal: 10 }}
                 Icon={
                   <TouchableOpacity
                     disabled={gettingMyCurrentLocation}
                     style={{ flexDirection: "row" }}
-                    onPress={useMyCurrentPositionAsPickUpLocation}>
+                    onPress={useMyCurrentPositionAsPickUpLocation}
+                  >
                     <ActivityIndicator
                       animating={gettingMyCurrentLocation}
                       color={colors.primary}
                     />
                     <MaterialIcons
-                      name='my-location'
+                      name="my-location"
                       size={20}
                       color={colors.black}
                       onPress={useMyCurrentPositionAsPickUpLocation}
@@ -440,7 +444,7 @@ function EnterLocationScreen(props) {
                   getPredictions(value);
                 }}
                 onBlur={handleBlur("pickUpAddress")}
-                autoCapitalize='none'
+                autoCapitalize="none"
                 onFocus={() => {
                   setShowToSuggestions(false);
                   setShowFromSuggestions(true);
@@ -484,11 +488,11 @@ function EnterLocationScreen(props) {
               <AppTextInput
                 white
                 editable={!loadingLatLong}
-                placeholder='Where are you delivering to?'
+                placeholder="Where are you delivering to?"
                 style={{ paddingHorizontal: 10 }}
                 Icon={
                   <FontAwesome5
-                    name='angle-right'
+                    name="angle-right"
                     size={20}
                     color={colors.grey}
                   />
@@ -504,7 +508,7 @@ function EnterLocationScreen(props) {
                   setShowFromSuggestions(false);
                 }}
                 value={values.deliveryAddress}
-                autoCapitalize='none'
+                autoCapitalize="none"
               />
               <AutoCompleteBox
                 show={showToSuggestions}
@@ -547,17 +551,18 @@ function EnterLocationScreen(props) {
                 // showsCompass={true}
                 onRegionChange={() => setRegion(region)}
                 loadingEnabled={true}
-                showsUserLocation={true}>
+                showsUserLocation={true}
+              >
                 {pickUPoint && deliveryPoint && (
                   <MapViewDirections
                     lineDashPattern={[0]}
                     origin={{ ...pickUPoint }}
                     destination={{ ...deliveryPoint }}
-                    apikey='AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y'
-                    mode='DRIVING'
-                    timePrecision='now'
+                    apikey="AIzaSyAPHNQTmBHXh6-lJaWmIMFbRikrrkncssk"
+                    mode="DRIVING"
+                    timePrecision="now"
                     strokeWidth={3}
-                    strokeColor='hotpink'
+                    strokeColor="hotpink"
                     tappable
                     geodesic
                     onError={(errorMessage) => {
@@ -570,11 +575,12 @@ function EnterLocationScreen(props) {
                 {deliveryPoint && (
                   <Marker
                     coordinate={deliveryPoint}
-                    title='Delivery Point'
+                    title="Delivery Point"
                     description={deliveryAddress}
-                    pinColor={colors.primary}>
+                    pinColor={colors.primary}
+                  >
                     <Ionicons
-                      name='location'
+                      name="location"
                       size={25}
                       color={colors.primary}
                     />
@@ -583,11 +589,12 @@ function EnterLocationScreen(props) {
                 {pickUPoint && (
                   <Marker
                     coordinate={pickUPoint}
-                    title='Pick Up Point'
+                    title="Pick Up Point"
                     description={pickUpAddress}
-                    pinColor={colors.primary}>
+                    pinColor={colors.primary}
+                  >
                     <Ionicons
-                      name='location'
+                      name="location"
                       size={25}
                       color={colors.primary}
                     />
@@ -604,7 +611,7 @@ function EnterLocationScreen(props) {
                   <ActivityIndicator
                     animating={loadingLatLong}
                     color={colors.white}
-                    size='large'
+                    size="large"
                   />
                 ) : (
                   "Done"
@@ -631,8 +638,9 @@ function EnterLocationScreen(props) {
                 removeLastItem.pop();
                 setPackages(removeLastItem);
                 props.navigation.navigate("PackageSummaryScreenNew");
-              }}>
-              <AppText size='xx-small'>Go back to summary</AppText>
+              }}
+            >
+              <AppText size="xx-small">Go back to summary</AppText>
             </TouchableOpacity>
           )}
 
@@ -640,7 +648,7 @@ function EnterLocationScreen(props) {
             <View style={styles.modalBox}>
               <View style={styles.modalContainer}>
                 <Ionicons
-                  name='close-circle'
+                  name="close-circle"
                   color={colors.primary}
                   size={67}
                 />
@@ -654,7 +662,7 @@ function EnterLocationScreen(props) {
                   change your address.
                 </AppText>
                 <AppButton
-                  title='Choose Inter-City'
+                  title="Choose Inter-City"
                   style={{ marginVertical: 10 }}
                   onPress={() => {
                     setOpenJourneyTypePanel(true);
@@ -663,7 +671,7 @@ function EnterLocationScreen(props) {
                   }}
                 />
                 <AppButton
-                  title='Change My Address'
+                  title="Change My Address"
                   style={{ marginVertical: 10 }}
                   onPress={() => {
                     setDifferentRegionError(false);
@@ -676,7 +684,7 @@ function EnterLocationScreen(props) {
             <View style={styles.modalBox}>
               <View style={styles.modalContainer}>
                 <Ionicons
-                  name='close-circle'
+                  name="close-circle"
                   color={colors.primary}
                   size={67}
                 />
@@ -690,7 +698,7 @@ function EnterLocationScreen(props) {
                   change your address.
                 </AppText>
                 <AppButton
-                  title='Choose Intra-city'
+                  title="Choose Intra-city"
                   style={{ marginVertical: 10 }}
                   onPress={() => {
                     setSameRegionError(false);
@@ -698,7 +706,7 @@ function EnterLocationScreen(props) {
                   }}
                 />
                 <AppButton
-                  title='Change My Address'
+                  title="Change My Address"
                   style={{ marginVertical: 10 }}
                   onPress={() => {
                     setSameRegionError(false);

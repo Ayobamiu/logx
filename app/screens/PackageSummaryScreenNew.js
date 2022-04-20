@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Pressable,
   Alert,
+  RefreshControl,
 } from "react-native";
 import AppButton from "../components/AppButton";
 import AppModal from "../components/AppModal";
@@ -54,27 +55,29 @@ function PackageSummaryScreenNew(props) {
   const [paymentMethod, setPaymentMethod] = useState("wallet");
   const [distance, setDistance] = useState();
   const [journeyType, setJourneyType] = useState("");
+
+  const getTripCost = async () => {
+    setLoading(true);
+    //check
+    const { data, error } = await placesApi.estimateTripCostAndDistance(
+      packages
+    );
+    if (!error && data) {
+      if (mounted) {
+        setEstimatedCostOriginal(data.price);
+        setEstimatedCost(data.price);
+        setDistance(data.distance);
+      }
+    }
+    if (mounted) {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     // if (packages.length === 0) {
     //   props.navigation.navigate("Home");
     // }
-    (async () => {
-      setLoading(true);
-      //check
-      const { data, error } = await placesApi.estimateTripCostAndDistance(
-        packages
-      );
-      if (!error && data) {
-        if (mounted) {
-          setEstimatedCostOriginal(data.price);
-          setEstimatedCost(data.price);
-          setDistance(data.distance);
-        }
-      }
-      if (mounted) {
-        setLoading(false);
-      }
-    })();
+    getTripCost();
     (async () => {
       const type = await get("journey:type");
       if (mounted) {
@@ -115,13 +118,15 @@ function PackageSummaryScreenNew(props) {
                 backgroundColor: colors.inputGray,
                 borderRadius: 26,
               },
-            ]}>
+            ]}
+          >
             <View
               style={{
                 padding: 8,
                 backgroundColor: colors.primary,
                 borderRadius: 26,
-              }}>
+              }}
+            >
               <AppText style={[styles.black]}>Destination {index + 1}</AppText>
             </View>
             <AppText style={[styles.black, styles.mh16]}>
@@ -134,7 +139,7 @@ function PackageSummaryScreenNew(props) {
             />
           </TouchableOpacity>
           <Feather
-            name='trash'
+            name="trash"
             size={20}
             color={colors.danger}
             style={styles.mh16}
@@ -218,11 +223,29 @@ function PackageSummaryScreenNew(props) {
       },
     ]);
   };
+
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = React.useCallback(() => {
+    if (mounted) {
+      setRefreshing(true);
+    }
+    (async () => {
+      await getTripCost();
+      if (mounted) {
+        setRefreshing(false);
+      }
+    })();
+  }, []);
   return (
     <View style={styles.container}>
       <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}>
+        showsHorizontalScrollIndicator={false}
+      >
         {/* ALert */}
         <AppModal isVisble={proceed} toggleModal={() => setProceed(!proceed)}>
           <View
@@ -231,20 +254,22 @@ function PackageSummaryScreenNew(props) {
               alignItems: "center",
               justifyContent: "center",
               padding: 58,
-            }}>
+            }}
+          >
             <Logx_onboardtwo style={{ marginVertical: 40 }} />
-            <AppText size='medium'>Successful</AppText>
+            <AppText size="medium">Successful</AppText>
             <AppText
               style={{
                 color: colors.light,
                 textAlign: "center",
                 paddingVertical: 16,
-              }}>
+              }}
+            >
               You have successfully added a package for the two locations. Click
               the link below to proceed.
             </AppText>
             <AppButton
-              title='Select a payment method'
+              title="Select a payment method"
               fullWidth
               style={styles.bottom}
               onPress={() => {
@@ -256,9 +281,10 @@ function PackageSummaryScreenNew(props) {
         </AppModal>
         <AppAlert
           isVisble={showInsufficientFund}
-          toggleModal={() => setShowInsufficientFund(false)}>
+          toggleModal={() => setShowInsufficientFund(false)}
+        >
           <View style={styles.avatar}>
-            <MaterialCommunityIcons name='exclamation-thick' />
+            <MaterialCommunityIcons name="exclamation-thick" />
           </View>
           <AppText style={[styles.bold, styles.mv10]}>
             Insufficient Balance
@@ -272,7 +298,7 @@ function PackageSummaryScreenNew(props) {
             color={colors.primary}
           />
           <AppButton
-            title='Fund your wallet'
+            title="Fund your wallet"
             onPress={() => {
               setShowInsufficientFund(false);
               // handleUpdateProfile({ availableBalance: estimatedCost * 2 });
@@ -280,7 +306,7 @@ function PackageSummaryScreenNew(props) {
             }}
           />
           <AppButton
-            title='Later'
+            title="Later"
             secondary
             onPress={() => {
               setShowInsufficientFund(false);
@@ -290,7 +316,8 @@ function PackageSummaryScreenNew(props) {
 
         <AppAlert
           isVisble={addingTrip}
-          toggleModal={() => setAddingTrip(false)}>
+          toggleModal={() => setAddingTrip(false)}
+        >
           <ActivityIndicator animating={addingTrip} color={colors.primary} />
           <AppText style={[{ textAlign: "center" }, styles.light, styles.mv10]}>
             Processing your trip details.
@@ -299,7 +326,7 @@ function PackageSummaryScreenNew(props) {
 
         {/* ALert */}
 
-        <AppText size='header' style={[styles.mb16]}>
+        <AppText size="header" style={[styles.mb16]}>
           Summary{" "}
         </AppText>
         {loading && (
@@ -314,17 +341,17 @@ function PackageSummaryScreenNew(props) {
         {packages.map((i, index) => (
           <TripItem show={index === showing} index={index} key={index}>
             <View style={styles.mv10} />
-            <DetailItem header='Pick Up Address' subHeader={i.pickUpAddress} />
+            <DetailItem header="Pick Up Address" subHeader={i.pickUpAddress} />
             <DetailItem
-              header='Receipent’s Contact'
+              header="Receipent’s Contact"
               subHeader={i.receipentNumber}
             />
             <DetailItem
-              header='Name on the Package'
+              header="Name on the Package"
               subHeader={i.receipentName}
             />
             <DetailItem
-              header='Receipent’s Address'
+              header="Receipent’s Address"
               subHeader={i.deliveryAddress}
             />
             {/* <DetailItem
@@ -332,7 +359,7 @@ function PackageSummaryScreenNew(props) {
               subHeader="62, Adeoyo area Ibadan, Oyo State"
             /> */}
             <DetailItem
-              header='Delivery Description'
+              header="Delivery Description"
               subHeader={i.description}
             />
           </TripItem>
@@ -368,7 +395,7 @@ function PackageSummaryScreenNew(props) {
           distance / 1000 > 150 &&  */}
         {journeyType === "inter-state" && (
           <AppButton
-            title='Offer your Price'
+            title="Offer your Price"
             onPress={() => setShowOffer(true)}
             secondary
             style={{ borderWidth: 1 }}
@@ -391,7 +418,7 @@ function PackageSummaryScreenNew(props) {
         </AppText> */}
 
         <AppButton
-          title='Find available delivery personel'
+          title="Find available delivery personel"
           fullWidth
           style={[styles.mv10, { marginTop: 30 }]}
           onPress={() => {
@@ -430,7 +457,7 @@ function PackageSummaryScreenNew(props) {
           disabled={loading}
         />
         <AppButton
-          title='Add another package'
+          title="Add another package"
           fullWidth
           secondary
           style={{ borderWidth: 1 }}
@@ -445,7 +472,8 @@ function PackageSummaryScreenNew(props) {
         </View> */}
         <PromptBottomSheet
           isVisble={showSelectPayment}
-          toggleModal={() => setShowSelectPayment(false)}>
+          toggleModal={() => setShowSelectPayment(false)}
+        >
           <AppText style={[styles.black, styles.mb16]}>
             How do you want to pay?
           </AppText>
@@ -454,11 +482,12 @@ function PackageSummaryScreenNew(props) {
             onPress={() => {
               setPaymentMethod("wallet");
               setShowSelectPayment(false);
-            }}>
-            <Feather name='credit-card' />
+            }}
+          >
+            <Feather name="credit-card" />
             <AppText style={{ marginHorizontal: 16 }}>Wallet </AppText>
             <MaterialCommunityIcons
-              name='chevron-right'
+              name="chevron-right"
               style={{ marginLeft: "auto" }}
             />
           </Pressable>
@@ -467,11 +496,12 @@ function PackageSummaryScreenNew(props) {
             onPress={() => {
               setPaymentMethod("onDelivery");
               setShowSelectPayment(false);
-            }}>
-            <Feather name='map-pin' />
+            }}
+          >
+            <Feather name="map-pin" />
             <AppText style={{ marginHorizontal: 16 }}>Pay on delivery </AppText>
             <MaterialCommunityIcons
-              name='chevron-right'
+              name="chevron-right"
               style={{ marginLeft: "auto" }}
             />
           </Pressable>

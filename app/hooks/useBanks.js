@@ -20,16 +20,26 @@ const useBanks = () => {
     setStatus("");
     setLoading(true);
     try {
-      const result = await axios.post(
-        "https://api.flutterwave.com/v3/accounts/resolve",
-        {
-          account_number,
-          account_bank,
-        },
+      // const result = await axios.post(
+      //   "https://api.flutterwave.com/v3/accounts/resolve",
+      //   {
+      //     account_number,
+      //     account_bank,
+      //   },
+      //   {
+      //     headers: {
+      //       Authorization:
+      //         "Bearer FLWSECK_TEST-f405da071aca4b9d683201fa235b9b3f-X",
+      //     },
+      //   }
+      // );
+      const result = await axios.get(
+        `https://api.paystack.co/bank/resolve?account_number=${account_number}&bank_code=${account_bank}`,
         {
           headers: {
             Authorization:
-              "Bearer FLWSECK_TEST-f405da071aca4b9d683201fa235b9b3f-X",
+              "Bearer sk_live_b518731d1a3521480641db2be41e2ef6a5801688",
+            "Content-Type": "application/json",
           },
         }
       );

@@ -48,7 +48,6 @@ function HomeScreen(props) {
   );
   const { changeUserMode, saveUser } = useAuth();
   const { mode, setMode } = useContext(ModeContext);
-
   const width = Dimensions.get("window").width;
 
   const [expandWhiteSection, setExpandWhiteSection] = useState(false);

@@ -214,14 +214,16 @@ function MapComponent({ packages, tripId, onDriverLocationChange = () => {} }) {
       region={region}
       style={styles.map}
       loadingEnabled={true}
-      showsUserLocation={true}>
+      showsUserLocation={true}
+    >
       {driverLocation2 &&
         driverLocation2.latitude &&
         driverLocation2.longitude && (
           <MarkerAnimated
             ref={animatedMarker}
             coordinate={driverLocation2}
-            pinColor={colors.danger}>
+            pinColor={colors.danger}
+          >
             {/* <MaterialCommunityIcons name='taxi' size={34} color='black' /> */}
           </MarkerAnimated>
         )}
@@ -237,11 +239,11 @@ function MapComponent({ packages, tripId, onDriverLocationChange = () => {} }) {
               longitude: Number(driverLocation.longitude),
             }}
             origin={`place_id:${item.pickUpAddressPlaceId}`}
-            apikey='AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y'
-            mode='DRIVING'
-            timePrecision='now'
+            apikey="AIzaSyAPHNQTmBHXh6-lJaWmIMFbRikrrkncssk"
+            mode="DRIVING"
+            timePrecision="now"
             strokeWidth={3}
-            strokeColor='red'
+            strokeColor="red"
             tappable
             onError={() => {
               showToast(
@@ -262,11 +264,11 @@ function MapComponent({ packages, tripId, onDriverLocationChange = () => {} }) {
               longitude: Number(driverLocation.longitude),
             }}
             destination={`place_id:${item.deliveryAddressPlaceId}`}
-            apikey='AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y'
-            mode='DRIVING'
-            timePrecision='now'
+            apikey="AIzaSyAPHNQTmBHXh6-lJaWmIMFbRikrrkncssk"
+            mode="DRIVING"
+            timePrecision="now"
             strokeWidth={3}
-            strokeColor='blue'
+            strokeColor="blue"
             tappable
             onError={() => {
               showToast(
@@ -281,11 +283,11 @@ function MapComponent({ packages, tripId, onDriverLocationChange = () => {} }) {
           key={index}
           origin={`place_id:${item.pickUpAddressPlaceId}`}
           destination={`place_id:${item.deliveryAddressPlaceId}`}
-          apikey='AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y'
-          mode='DRIVING'
-          timePrecision='now'
+          apikey="AIzaSyAPHNQTmBHXh6-lJaWmIMFbRikrrkncssk"
+          mode="DRIVING"
+          timePrecision="now"
           strokeWidth={3}
-          strokeColor='hotpink'
+          strokeColor="hotpink"
           tappable
           onError={() => {
             showToast(
@@ -304,7 +306,8 @@ function MapComponent({ packages, tripId, onDriverLocationChange = () => {} }) {
           }}
           title={`Delivery Location ${index + 1}`}
           description={item.deliveryAddress}
-          pinColor={colors.primary}>
+          pinColor={colors.primary}
+        >
           {/* <Ionicons name='location' color={colors.primary} size={25} /> */}
         </Marker>
       ))}
@@ -317,7 +320,8 @@ function MapComponent({ packages, tripId, onDriverLocationChange = () => {} }) {
           }}
           title={`Pick Up Point ${index + 1}`}
           description={item.pickUpAddress}
-          pinColor={colors.primary}>
+          pinColor={colors.primary}
+        >
           {/* <Ionicons name='location' color={colors.primary} size={25} /> */}
         </Marker>
       ))}

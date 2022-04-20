@@ -81,9 +81,10 @@ function NotificationsScreen(props) {
               height: 400,
               justifyContent: "center",
               alignItems: "center",
-            }}>
+            }}
+          >
             <Ionicons
-              name='ios-notifications-outline'
+              name="ios-notifications-outline"
               size={70}
               style={{ marginBottom: 10 }}
             />
@@ -91,7 +92,7 @@ function NotificationsScreen(props) {
           </View>
         )}
         ListHeaderComponent={
-          <AppText size='header' style={[styles.bold, styles.mb10]}>
+          <AppText size="header" style={[styles.bold, styles.mb10]}>
             Notifications
           </AppText>
         }
@@ -188,7 +189,8 @@ function NotificationsScreen(props) {
       />
       <PromptBottomSheet
         isVisble={showTripInvite}
-        toggleModal={() => setshowTripInvite(false)}>
+        toggleModal={() => setshowTripInvite(false)}
+      >
         <DriverRequestPreview requestItem={trip} />
       </PromptBottomSheet>
     </View>
