@@ -14,9 +14,8 @@ import AuthContext from "../contexts/auth";
 async function registerForPushNotificationsAsync() {
   let token;
   if (Constants.isDevice) {
-    const {
-      status: existingStatus,
-    } = await Notifications.getPermissionsAsync();
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     if (existingStatus !== "granted") {
       const { status } = await Notifications.requestPermissionsAsync();
@@ -208,14 +207,13 @@ export default useNotification = () => {
       }
     });
 
-    notificationListener.current = Notifications.addNotificationReceivedListener(
-      (notification) => {
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener((notification) => {
         cacheNotifications(notification);
-      }
-    );
+      });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
         if (response.notification.request.content.data) {
           if (
             response.notification.request.content.data?.type === "trip:code"
@@ -273,8 +271,7 @@ export default useNotification = () => {
             appNavigation.navigate("NotificationsScreen");
           }
         }
-      }
-    );
+      });
 
     return () => {
       Notifications.removeNotificationSubscription(
