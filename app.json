@@ -39,7 +39,7 @@
         }
       },
       "package": "com.logx",
-      "versionCode": 1,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
