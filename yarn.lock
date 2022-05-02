@@ -6407,7 +6407,7 @@
     "escape-string-regexp" "2.0.0"
     "invariant" "2.2.4"
 
-"react-native@*", "react-native@^0.0.0-0 || 0.60 - 0.66 || 1000.0.0", "react-native@>= 0.41.2", "react-native@>= 0.51", "react-native@>= 0.59", "react-native@>=0.42.0", "react-native@>=0.45.0", "react-native@>=0.47.0", "react-native@>=0.50.0", "react-native@>=0.57", "react-native@>=0.60 <=0.64", "react-native@>=0.62.0-rc.0 <0.64.0", "react-native@~0.63.4":
+"react-native@*", "react-native@^0.0.0-0 || 0.60 - 0.66 || 1000.0.0", "react-native@^0.63.4", "react-native@>= 0.41.2", "react-native@>= 0.51", "react-native@>= 0.59", "react-native@>=0.42.0", "react-native@>=0.45.0", "react-native@>=0.47.0", "react-native@>=0.50.0", "react-native@>=0.57", "react-native@>=0.60 <=0.64", "react-native@>=0.62.0-rc.0 <0.64.0":
   "integrity" "sha512-I4kM8kYO2mWEYUFITMcpRulcy4/jd+j9T6PbIzR0FuMcz/xwd+JwHoLPa1HmCesvR1RDOw9o4D+OFLwuXXfmGw=="
   "resolved" "https://registry.npmjs.org/react-native/-/react-native-0.63.4.tgz"
   "version" "0.63.4"
