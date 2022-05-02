@@ -1,4 +1,6 @@
 package com.logx;
+import expo.modules.updates.UpdatesDevLauncherController;
+import expo.modules.devlauncher.DevLauncherController;
 
 import android.app.Application;
 import android.content.Context;
@@ -6,8 +8,6 @@ import android.net.Uri;
 
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
-// import com.transistorsoft.rnbackgroundfetch.RNBackgroundFetchPackage;
-// import com.jamesisaac.rnbackgroundtask.BackgroundTaskPackage;
 import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
@@ -29,8 +29,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import javax.annotation.Nullable;
-import com.facebook.react.BuildConfig;
-
 
 public class MainApplication extends Application implements ReactApplication {
   private final ReactModuleRegistryProvider mModuleRegistryProvider = new ReactModuleRegistryProvider(
@@ -40,7 +38,7 @@ public class MainApplication extends Application implements ReactApplication {
   private final ReactNativeHost mReactNativeHost = new ReactNativeHost(this) {
     @Override
     public boolean getUseDeveloperSupport() {
-      return BuildConfig.DEBUG;
+      return DevLauncherController.getInstance().getUseDeveloperSupport();
     }
 
     @Override
@@ -93,6 +91,10 @@ public class MainApplication extends Application implements ReactApplication {
       UpdatesController.initialize(this);
     }
 
+    DevLauncherController.initialize(this, getReactNativeHost());
+    if (BuildConfig.DEBUG) {
+      DevLauncherController.getInstance().setUpdatesInterface(UpdatesDevLauncherController.initialize(this));
+    }
     initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
   }
 

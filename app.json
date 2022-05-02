@@ -13,7 +13,6 @@
       [
         "expo-notifications",
         {
-          "icon": "./local/assets/notIcon.png",
           "color": "#ffffff"
         }
       ]
@@ -33,6 +32,7 @@
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "config":{
         "googleMaps":{
           "apiKey":"AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y"
