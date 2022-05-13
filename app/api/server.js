@@ -1,6 +1,6 @@
 /** @format */
 
-const liveUrl = "https://logx-backend.herokuapp.com/";
+const liveUrl = "https://logx-api.herokuapp.com/";
 const localUrl = "http://192.168.8.101:3004/";
 
 const baseUrl = liveUrl;
