@@ -11,6 +11,11 @@ import { get, store } from "../utility/cache";
 import ModeContext from "../contexts/mode";
 import AuthContext from "../contexts/auth";
 
+import React from "react";
+import messaging from "@react-native-firebase/messaging";
+// import auth from "@react-native-firebase/auth";
+// import firestore from "@react-native-firebase/firestore";
+
 async function registerForPushNotificationsAsync() {
   let token;
   if (Constants.isDevice) {
@@ -30,7 +35,14 @@ async function registerForPushNotificationsAsync() {
         experienceId: "@ayobamiu/logX",
       }).catch((error) => {})
     ).data;
-    await expoPushTokenApi.register(token);
+    // await expoPushTokenApi.register(token);
+
+    messaging()
+      .getToken()
+      .then((token) => {
+        console.log("token", token);
+        // return expoPushTokenApi.register(token);
+      });
   } else {
     alert("Must use physical device for Push Notifications");
   }
