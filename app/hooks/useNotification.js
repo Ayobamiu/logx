@@ -30,11 +30,8 @@ async function registerForPushNotificationsAsync() {
       alert("Failed to get push token for push notification!");
       return;
     }
-    token = (
-      await Notifications.getExpoPushTokenAsync({
-        experienceId: "@ayobamiu/logX",
-      }).catch((error) => {})
-    ).data;
+    token = (await Notifications.getExpoPushTokenAsync({}).catch((error) => {}))
+      .data;
     // await expoPushTokenApi.register(token);
 
     messaging()
