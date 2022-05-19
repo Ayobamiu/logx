@@ -36,6 +36,9 @@
       "config":{
         "googleMaps":{
           "apiKey":"AIzaSyCM5oYQQFY3p_RJ7T0_AfVQDt4hcTLhs-Y"
+        },
+        "googleSignIn": {
+          "apiKey": "AIzaSyATV2n7D89HuPtgi-qsEohY8ZX0aNNk9-0"
         }
       },
       "package": "com.logx",
