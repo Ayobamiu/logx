@@ -40,7 +40,7 @@
     "expo-splash-screen": "~0.13.5",
     "expo-status-bar": "~1.1.0",
     "expo-task-manager": "~10.0.3",
-    "expo-updates": "~0.10.15",
+    "expo-updates": "~0.10.13",
     "flutterwave-react-native": "^1.0.2",
     "formik": "^2.2.9",
     "fuzzy-search": "^3.2.1",

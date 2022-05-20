@@ -7,7 +7,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:31250171246:android:e6125e4a45d96c2e27ed7f",
+        "mobilesdk_app_id": "1:31250171246:android:e6125e4a45d96c2e27ed7f", 
         "android_client_info": {
           "package_name": "com.logx"
         }
